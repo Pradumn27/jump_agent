@@ -36,21 +36,4 @@ defmodule JumpAgent.ChatFixtures do
 
     message
   end
-
-  @doc """
-  Generate a message.
-  """
-  def message_fixture(attrs \\ %{}) do
-    {:ok, message} =
-      attrs
-      |> Enum.into(%{
-        content: "some content",
-        metadata: %{},
-        role: "some role",
-        timestamp: ~U[2025-07-10 21:23:00Z]
-      })
-      |> JumpAgent.Chat.create_message()
-
-    message
-  end
 end
