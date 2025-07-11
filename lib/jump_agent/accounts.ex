@@ -360,17 +360,7 @@ defmodule JumpAgent.Accounts do
   def link_auth_identity(user, attrs) do
     %JumpAgent.Accounts.AuthIdentity{}
     |> JumpAgent.Accounts.AuthIdentity.changeset(Map.merge(attrs, %{user_id: user.id}))
-    |> dbg()
-    |> Repo.insert(
-      on_conflict: [
-        set: [
-          token: attrs.token,
-          refresh_token: attrs.refresh_token,
-          expires_at: attrs.expires_at
-        ]
-      ],
-      conflict_target: [:provider, :uid]
-    )
+    |> Repo.insert()
   end
 
   def get_auth_identity(user, provider) do
