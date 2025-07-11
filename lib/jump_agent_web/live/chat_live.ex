@@ -35,7 +35,8 @@ defmodule JumpAgentWeb.ChatLive do
             JumpAgent.Chat.create_chat_session(%{
               title: message,
               started_at: now,
-              last_active_at: now
+              last_active_at: now,
+              user_id: socket.assigns.current_user.id
             })
 
           {session.id, assign(socket, :chat_session_id, session.id)}

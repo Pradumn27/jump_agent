@@ -16,7 +16,7 @@ defmodule JumpAgent.Chat.ChatSession do
   @doc false
   def changeset(chat_session, attrs) do
     chat_session
-    |> cast(attrs, [:title, :started_at, :last_active_at])
-    |> validate_required([:title, :started_at, :last_active_at])
+    |> cast(attrs, [:title, :started_at, :last_active_at, :user_id])
+    |> validate_required([:title, :started_at, :last_active_at, :user_id])
   end
 end
