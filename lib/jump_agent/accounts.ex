@@ -358,8 +358,6 @@ defmodule JumpAgent.Accounts do
   end
 
   def link_auth_identity(user, attrs) do
-    IO.inspect(user)
-
     %JumpAgent.Accounts.AuthIdentity{}
     |> JumpAgent.Accounts.AuthIdentity.changeset(Map.merge(attrs, %{user_id: user.id}))
     |> dbg()

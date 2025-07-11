@@ -18,7 +18,9 @@ defmodule JumpAgent.Chat do
 
   """
   def list_chat_sessions do
-    Repo.all(ChatSession)
+    ChatSession
+    |> order_by(desc: :last_active_at)
+    |> Repo.all()
   end
 
   @doc """
@@ -35,7 +37,7 @@ defmodule JumpAgent.Chat do
       ** (Ecto.NoResultsError)
 
   """
-  def get_chat_session!(id), do: Repo.get!(ChatSession, id)
+  def get_chat_session!(id), do: Repo.get!(ChatSession, id) |> Repo.preload(:messages)
 
   @doc """
   Creates a chat_session.

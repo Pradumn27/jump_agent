@@ -8,6 +8,8 @@ defmodule JumpAgent.Chat.ChatSession do
     field :last_active_at, :utc_datetime
     field :user_id, :id
 
+    has_many :messages, JumpAgent.Chat.Message, foreign_key: :chat_session_id
+
     timestamps(type: :utc_datetime)
   end
 

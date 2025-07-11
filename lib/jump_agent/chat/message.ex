@@ -15,7 +15,7 @@ defmodule JumpAgent.Chat.Message do
   @doc false
   def changeset(message, attrs) do
     message
-    |> cast(attrs, [:role, :content, :timestamp, :metadata])
-    |> validate_required([:role, :content, :timestamp])
+    |> cast(attrs, [:role, :content, :timestamp, :metadata, :chat_session_id])
+    |> validate_required([:role, :content, :timestamp, :chat_session_id])
   end
 end

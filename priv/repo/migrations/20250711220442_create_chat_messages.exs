@@ -3,13 +3,12 @@ defmodule JumpAgent.Repo.Migrations.CreateChatMessages do
 
   def change do
     create table(:chat_messages) do
-      add :role, :string
       add :content, :text
-      add :timestamp, :utc_datetime
-      add :metadata, :map
-      add :chat_session_id, references(:chat_sessions, on_delete: :nothing)
+      add :role, :string
+      add :timestamp, :naive_datetime
+      add :chat_session_id, references(:chat_sessions, on_delete: :delete_all)
 
-      timestamps(type: :utc_datetime)
+      timestamps()
     end
 
     create index(:chat_messages, [:chat_session_id])

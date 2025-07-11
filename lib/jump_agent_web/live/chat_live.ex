@@ -5,12 +5,15 @@ defmodule JumpAgentWeb.ChatLive do
 
   @impl true
   def mount(_params, _session, socket) do
+    chat_sessions = JumpAgent.Chat.list_chat_sessions()
+
     {:ok,
      socket
+     |> assign(:chat_session_id, nil)
+     |> assign(:chat_sessions, chat_sessions)
      |> assign(:messages, [])
      |> assign(:current_message, "")
      |> assign(:is_thinking, false)
-     |> assign(:message_id_counter, 0)
      |> assign(:current_tab, "chat")}
   end
 
@@ -22,12 +25,43 @@ defmodule JumpAgentWeb.ChatLive do
   @impl true
   def handle_event("send_message", %{"message" => message}, socket) when message != "" do
     now = NaiveDateTime.utc_now()
-    # capture LiveView process PID
+
     caller = self()
+
+    {chat_session_id, socket} =
+      case socket.assigns.chat_session_id do
+        nil ->
+          {:ok, session} =
+            JumpAgent.Chat.create_chat_session(%{
+              title: message,
+              started_at: now,
+              last_active_at: now
+            })
+
+          {session.id, assign(socket, :chat_session_id, session.id)}
+
+        id ->
+          {id, socket}
+      end
+
+    {:ok, _user_msg} =
+      JumpAgent.Chat.create_message(%{
+        role: "user",
+        content: message,
+        timestamp: now,
+        chat_session_id: chat_session_id
+      })
 
     spawn(fn ->
       case JumpAgent.OpenAI.chat_completion(message) do
         {:ok, reply} ->
+          JumpAgent.Chat.create_message(%{
+            role: "assistant",
+            content: reply,
+            timestamp: NaiveDateTime.utc_now(),
+            chat_session_id: chat_session_id
+          })
+
           send(caller, {:ai_response, reply})
 
         {:error, reason} ->
@@ -43,7 +77,7 @@ defmodule JumpAgentWeb.ChatLive do
        msgs ++
          [
            %{role: "user", content: message, timestamp: now},
-           %{role: "ai", content: "", timestamp: now}
+           %{role: "assistant", content: "", timestamp: now}
          ]
      end)
      |> assign(:current_message, "")}
@@ -59,9 +93,9 @@ defmodule JumpAgentWeb.ChatLive do
     {:noreply,
      socket
      |> assign(:messages, [])
+     |> assign(:chat_session_id, nil)
      |> assign(:current_message, "")
-     |> assign(:is_thinking, false)
-     |> assign(:message_id_counter, 0)}
+     |> assign(:is_thinking, false)}
   end
 
   @impl true
@@ -73,15 +107,56 @@ defmodule JumpAgentWeb.ChatLive do
     {:noreply, assign(socket, show_modal: false)}
   end
 
-  def handle_event("change_tab", %{"tab" => tab}, socket) do
-    {:noreply, assign(socket, current_tab: tab)}
+  def handle_event("change_tab", %{"tab" => "chat"}, socket) do
+    {:noreply, assign(socket, current_tab: "chat")}
+  end
+
+  def handle_event("change_tab", %{"tab" => "history"}, socket) do
+    chat_sessions = JumpAgent.Chat.list_chat_sessions()
+    {:noreply, assign(socket, current_tab: "history", chat_sessions: chat_sessions)}
+  end
+
+  @impl true
+  def handle_event("load_chat_session", %{"id" => session_id}, socket) do
+    session = JumpAgent.Chat.get_chat_session!(session_id)
+
+    messages =
+      Enum.map(session.messages, fn msg ->
+        %{
+          role: msg.role,
+          content: msg.content,
+          timestamp: msg.timestamp
+        }
+      end)
+
+    {:noreply,
+     socket
+     |> assign(:chat_session, session)
+     |> assign(:messages, messages)
+     |> assign(:current_tab, "chat")}
+  end
+
+  @impl true
+  def handle_event("select_session", %{"id" => id}, socket) do
+    session_id = String.to_integer(id)
+
+    messages =
+      JumpAgent.Chat.get_chat_session_with_messages!(session_id)
+      |> Map.get(:messages)
+      |> Enum.sort_by(& &1.inserted_at)
+
+    {:noreply,
+     socket
+     |> assign(:chat_session_id, session_id)
+     |> assign(:messages, messages)
+     |> assign(:current_tab, "chat")}
   end
 
   @impl true
   def handle_info({:ai_response, reply}, socket) do
     updated_messages =
       List.update_at(socket.assigns.messages, -1, fn msg ->
-        if msg.role == "ai" or msg.role == :ai do
+        if msg.role == "assistant" or msg.role == :assistant do
           %{msg | content: reply}
         else
           msg
@@ -94,31 +169,10 @@ defmodule JumpAgentWeb.ChatLive do
   end
 
   @impl true
-  def handle_info(:generate_response, socket) do
-    # Simulate AI response
-    ai_response = generate_ai_response(socket.assigns.messages)
-
-    ai_message = %{
-      id: socket.assigns.message_id_counter,
-      role: "assistant",
-      content: ai_response,
-      timestamp: DateTime.utc_now()
-    }
-
-    messages = socket.assigns.messages ++ [ai_message]
-
-    {:noreply,
-     socket
-     |> assign(:messages, messages)
-     |> assign(:is_thinking, false)
-     |> assign(:message_id_counter, socket.assigns.message_id_counter + 1)}
-  end
-
-  @impl true
   def handle_info({:stream_chunk, chunk}, socket) do
     updated_messages =
       List.update_at(socket.assigns.messages, -1, fn msg ->
-        if msg.role == :ai do
+        if msg.role == :assistant do
           %{msg | content: msg.content <> chunk}
         else
           msg
@@ -142,41 +196,13 @@ defmodule JumpAgentWeb.ChatLive do
      |> assign(:loading, false)
      |> update(:messages, fn msgs ->
        List.update_at(msgs, -1, fn msg ->
-         if msg.role == :ai do
+         if msg.role == :assistant do
            %{msg | content: "⚠️ Error: #{inspect(reason)}"}
          else
            msg
          end
        end)
      end)}
-  end
-
-  defp generate_ai_response(messages) do
-    # Simple AI response simulation
-    responses = [
-      "That's an interesting question! Let me think about that...",
-      "I understand what you're asking. Here's my perspective on that topic.",
-      "Great question! Based on what you've shared, I think...",
-      "Thanks for sharing that with me. I'd be happy to help you with this.",
-      "That's a thoughtful observation. Let me provide some insights.",
-      "I can see why you'd want to know about that. Here's what I think...",
-      "Excellent point! This is something I've been thinking about too.",
-      "That's a complex topic, but I'll do my best to explain it clearly."
-    ]
-
-    base_response = Enum.random(responses)
-
-    # Add some context based on recent messages
-    recent_message = List.last(messages)
-
-    if recent_message &&
-         String.contains?(String.downcase(recent_message.content), ["code", "programming"]) do
-      base_response <>
-        " When it comes to programming, I always recommend starting with the fundamentals and building up from there. Would you like me to elaborate on any specific aspect?"
-    else
-      base_response <>
-        " I'm here to help with any questions you might have. Feel free to ask me anything!"
-    end
   end
 
   def user_input(assigns) do
@@ -339,6 +365,27 @@ defmodule JumpAgentWeb.ChatLive do
 
   def chat_history(assigns) do
     ~H"""
+    <div class="p-4 space-y-4">
+      <%= if @chat_sessions == [] do %>
+        <div class="text-gray-500">No previous chats</div>
+      <% else %>
+        <ul class="divide-y divide-gray-200">
+          <%= for session <- @chat_sessions do %>
+            <li class="py-2">
+              <button
+                phx-click="select_session"
+                phx-value-id={session.id}
+                class={"text-left w-full hover:bg-gray-100 px-2 py-1 rounded-lg #{session.id == @chat_session_id && "bg-gray-100"}"}
+              >
+                <div class="text-sm font-medium">
+                  {session.title || "Chat #{session.id}"}
+                </div>
+              </button>
+            </li>
+          <% end %>
+        </ul>
+      <% end %>
+    </div>
     """
   end
 
@@ -358,7 +405,7 @@ defmodule JumpAgentWeb.ChatLive do
                 current_message={@current_message}
               />
             <% else %>
-              <.chat_history />
+              <.chat_history chat_sessions={@chat_sessions} chat_session_id={@chat_session_id} />
             <% end %>
           </div>
         </div>
