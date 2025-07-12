@@ -4,7 +4,7 @@ defmodule JumpAgent.OpenAI do
   alias JumpAgent.Embedding
   alias JumpAgent.Knowledge
 
-  def chat_completion(user_prompt, user) do
+  def chat_completion(user_prompt, user, chat_session_id) do
     api_key = Application.get_env(:jump_agent, :openai)[:api_key]
 
     embedding = Embedding.generate(user_prompt)
@@ -13,6 +13,14 @@ defmodule JumpAgent.OpenAI do
       Knowledge.search_similar_contexts(embedding, 100)
 
     # |> filter_by_user(user.id)
+
+    chat_history =
+      JumpAgent.Chat.get_chat_session_with_messages!(chat_session_id)
+      |> Map.get(:messages)
+      |> Enum.sort_by(& &1.inserted_at)
+      |> Enum.map_join("\n", fn msg ->
+        "#{msg.role}: #{msg.content}"
+      end)
 
     context_text =
       contexts
@@ -24,9 +32,19 @@ defmodule JumpAgent.OpenAI do
     final_prompt = """
     You are a helpful assistant. Use the following context if relevant:
 
+    Previous conversation:
+    #{chat_history}
+
+    <------------------------>
+
+    Relevant knowledge context:
     #{context_text}
 
+    <------------------------>
+
     User has the email #{user.email}
+
+    <------------------------>
 
     User Question: #{user_prompt}
     """

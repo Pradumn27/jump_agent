@@ -74,7 +74,7 @@ defmodule JumpAgentWeb.ChatLive do
       })
 
     spawn(fn ->
-      case JumpAgent.OpenAI.chat_completion(message, socket.assigns.current_user) do
+      case JumpAgent.OpenAI.chat_completion(message, socket.assigns.current_user, chat_session_id) do
         {:ok, reply} ->
           JumpAgent.Chat.create_message(%{
             role: "assistant",
