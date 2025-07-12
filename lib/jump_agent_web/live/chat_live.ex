@@ -179,6 +179,19 @@ defmodule JumpAgentWeb.ChatLive do
     end
   end
 
+  def handle_event("sync_hubspot", _params, socket) do
+    user = socket.assigns.current_user
+
+    case JumpAgent.Integrations.Hubspot.sync_contacts(user) do
+      {:ok, _} ->
+        JumpAgent.Integrations.Hubspot.sync_notes(user)
+        {:noreply, put_flash(socket, :info, "HubSpot synced successfully.")}
+
+      {:error, err} ->
+        {:noreply, put_flash(socket, :error, "Failed to sync HubSpot: #{inspect(err)}")}
+    end
+  end
+
   @impl true
   def handle_info({:ai_response, reply}, socket) do
     updated_messages =
@@ -431,7 +444,13 @@ defmodule JumpAgentWeb.ChatLive do
         phx-click="sync_calendar"
         class="px-3 py-1 text-sm bg-green-600 text-white rounded hover:bg-green-700"
       >
-      Sync Calendar
+       Sync Calendar
+      </button>
+       <button
+        phx-click="sync_hubspot"
+        class="px-3 py-1 text-sm bg-yellow-600 text-white rounded hover:bg-yellow-700"
+      >
+       Sync Hubspot
       </button>
       <.modal id="my-modal" on_cancel={JS.push("close_modal")}>
         <div class="h-[90vh] w-full overflow-auto">
