@@ -4,7 +4,7 @@ defmodule JumpAgent.Integrations.Gmail do
   alias GoogleApi.Gmail.V1.Api.Users
   alias GoogleApi.Gmail.V1.Connection
 
-  def fetch_recent_emails(user, max_results \\ 10) do
+  def fetch_recent_emails(user, max_results \\ 500) do
     with {:ok, token} <- get_google_token(user),
          conn <- Connection.new(token),
          {:ok, %GoogleApi.Gmail.V1.Model.ListMessagesResponse{messages: messages}} <-
