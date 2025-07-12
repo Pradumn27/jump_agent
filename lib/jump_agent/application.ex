@@ -17,7 +17,8 @@ defmodule JumpAgent.Application do
       # Start a worker by calling: JumpAgent.Worker.start_link(arg)
       # {JumpAgent.Worker, arg},
       # Start to serve requests, typically the last entry
-      JumpAgentWeb.Endpoint
+      JumpAgentWeb.Endpoint,
+      {Oban, Application.fetch_env!(:jump_agent, Oban)}
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html

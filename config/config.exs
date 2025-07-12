@@ -90,6 +90,17 @@ config :jump_agent, :openai,
 
 config :jump_agent, JumpAgent.Repo, types: JumpAgent.PostgrexTypes
 
+config :jump_agent, Oban,
+  repo: JumpAgent.Repo,
+  plugins: [
+    Oban.Plugins.Pruner,
+    {Oban.Plugins.Cron,
+     crontab: [
+       {"*/10 * * * *", JumpAgent.Workers.SyncIntegrationsWorker}
+     ]}
+  ],
+  queues: [default: 10]
+
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.
 import_config "#{config_env()}.exs"

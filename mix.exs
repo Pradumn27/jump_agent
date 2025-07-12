@@ -68,7 +68,8 @@ defmodule JumpAgent.MixProject do
       {:goth, "~> 1.4"},
       {:req, "~> 0.5.14"},
       {:pgvector, "~> 0.3.0"},
-      {:google_api_calendar, "~> 0.26.0"}
+      {:google_api_calendar, "~> 0.26.0"},
+      {:oban, "~> 2.19.4"}
     ]
   end
 
