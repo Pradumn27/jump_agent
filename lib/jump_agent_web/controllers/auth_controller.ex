@@ -34,6 +34,7 @@ defmodule JumpAgentWeb.AuthController do
           token: auth.credentials.token,
           refresh_token: auth.credentials.refresh_token,
           email: auth.info.email,
+          avatar: auth.info.image,
           name: auth.info.first_name <> " " <> auth.info.last_name,
           expires_at: DateTime.from_unix!(auth.credentials.expires_at)
         }
@@ -53,10 +54,11 @@ defmodule JumpAgentWeb.AuthController do
         user_params = %{
           token: auth.credentials.token,
           refresh_token: auth.credentials.refresh_token,
-          expires_at: DateTime.from_unix!(auth.credentials.expires_at)
+          expires_at: DateTime.from_unix!(auth.credentials.expires_at),
+          avatar: auth.info.image
         }
 
-        case Accounts.update_user_oauth_tokens_on_login(user, user_params) do
+        case Accounts.update_user_on_login(user, user_params) do
           {:ok, user} ->
             UserAuth.log_in_user(conn, user)
 

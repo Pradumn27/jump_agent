@@ -18,6 +18,8 @@ defmodule JumpAgent.Accounts.User do
     field :current_password, :string, virtual: true, redact: true
     field :confirmed_at, :utc_datetime
 
+    field :avatar, :string
+
     has_many :auth_identities, JumpAgent.Accounts.AuthIdentity
 
     timestamps(type: :utc_datetime)
@@ -25,7 +27,7 @@ defmodule JumpAgent.Accounts.User do
 
   def registration_oauth_changeset(user, attrs, _opts \\ []) do
     user
-    |> cast(attrs, [:email, :name, :provider, :token, :refresh_token, :expires_at])
+    |> cast(attrs, [:email, :name, :provider, :token, :refresh_token, :expires_at, :avatar])
     |> validate_required([:email, :token, :refresh_token])
     |> unique_constraint(:email)
   end

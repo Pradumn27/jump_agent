@@ -7,6 +7,21 @@ defmodule JumpAgentWeb.ChatLive do
   def mount(_params, _session, socket) do
     chat_sessions = JumpAgent.Chat.list_chat_sessions()
 
+    integrations = JumpAgent.Integrations.get_integrations(socket.assigns.current_user)
+
+    ongoing_instructions = [
+      %{
+        "id" => 1,
+        "instruction" => "Instruction 1",
+        "active" => true
+      },
+      %{
+        "id" => 2,
+        "instruction" => "Instruction 2",
+        "active" => false
+      }
+    ]
+
     {:ok,
      socket
      |> assign(:chat_session_id, nil)
@@ -14,8 +29,13 @@ defmodule JumpAgentWeb.ChatLive do
      |> assign(:messages, [])
      |> assign(:current_message, "")
      |> assign(:is_thinking, false)
-     |> assign(:current_tab, "chat")}
+     |> assign(:current_tab, "chat")
+     |> assign(:show_dropdown, false)
+     |> assign(:integrations, integrations)
+     |> assign(:ongoing_instructions, ongoing_instructions)}
   end
+
+  # Events
 
   @impl true
   def handle_event("update_message", %{"message" => message}, socket) do
@@ -104,14 +124,17 @@ defmodule JumpAgentWeb.ChatLive do
     {:noreply, assign(socket, show_modal: true)}
   end
 
+  @impl true
   def handle_event("close_modal", _params, socket) do
     {:noreply, assign(socket, show_modal: false)}
   end
 
+  @impl true
   def handle_event("change_tab", %{"tab" => "chat"}, socket) do
     {:noreply, assign(socket, current_tab: "chat")}
   end
 
+  @impl true
   def handle_event("change_tab", %{"tab" => "history"}, socket) do
     chat_sessions = JumpAgent.Chat.list_chat_sessions()
     {:noreply, assign(socket, current_tab: "history", chat_sessions: chat_sessions)}
@@ -193,6 +216,32 @@ defmodule JumpAgentWeb.ChatLive do
   end
 
   @impl true
+  def handle_event("toggle", _params, socket) do
+    {:noreply, assign(socket, show_dropdown: &(!&1))}
+  end
+
+  @impl true
+  def handle_event("close", _params, socket) do
+    {:noreply, assign(socket, show_dropdown: false)}
+  end
+
+  @impl true
+  def handle_event("toggle_instruction", %{"id" => id}, socket) do
+    id = String.to_integer(id)
+
+    updated_instructions =
+      Enum.map(socket.assigns.ongoing_instructions, fn instruction ->
+        if instruction["id"] == id do
+          Map.put(instruction, "active", !instruction["active"])
+        else
+          instruction
+        end
+      end)
+
+    {:noreply, assign(socket, :ongoing_instructions, updated_instructions)}
+  end
+
+  @impl true
   def handle_info({:ai_response, reply}, socket) do
     updated_messages =
       List.update_at(socket.assigns.messages, -1, fn msg ->
@@ -244,6 +293,8 @@ defmodule JumpAgentWeb.ChatLive do
        end)
      end)}
   end
+
+  # Components
 
   def user_input(assigns) do
     ~H"""
@@ -332,8 +383,8 @@ defmodule JumpAgentWeb.ChatLive do
   @spec chat_component(any()) :: Phoenix.LiveView.Rendered.t()
   def chat_component(assigns) do
     ~H"""
-    <div  class="flex h-full relative flex-col overflow-auto">
-      <div id="chat-scroll" phx-hook="ScrollBottom"  class="flex-1 overflow-auto px-4 py-6 space-y-6">
+    <div class="flex h-full relative flex-col overflow-auto">
+      <div id="chat-scroll" phx-hook="ScrollBottom" class="flex-1 overflow-auto px-4 py-6 space-y-6">
         <%= for message <- @messages do %>
           <%= if message.role == "user" do %>
             <.user_message content={message.content} />
@@ -429,29 +480,210 @@ defmodule JumpAgentWeb.ChatLive do
     """
   end
 
+  def main_header(assigns) do
+    ~H"""
+    <header class="bg-white border-b border-gray-200">
+      <div class="flex items-center justify-between px-6 py-4">
+        <div class="flex items-center space-x-3">
+          <div class="p-2 bg-green-100 rounded-lg">
+            <.icon name="hero-chat-bubble-left-right" class="h-6 w-6 text-green-600" />
+          </div>
+          <div>
+            <h1 class="text-xl font-semibold text-gray-900">Financial Advisor AI</h1>
+            <p class="text-sm text-gray-600">Intelligent Client Management Dashboard</p>
+          </div>
+        </div>
+        <div class="flex items-center space-x-4">
+          <.button
+            phx-click={show_modal("my-modal")}
+            class="bg-green-600 hover:bg-green-700 text-white px-6"
+          >
+            <.icon name="hero-envelope" class="mr-2 h-5 w-5" /> Ask AI Assistant
+          </.button>
+          <.profile_menu current_user={@current_user} show_dropdown={@show_dropdown} />
+        </div>
+      </div>
+    </header>
+    """
+  end
+
+  def profile_menu(assigns) do
+    ~H"""
+    <div id="user-dropdown" class="relative" phx-click-away="close">
+      <button
+        type="button"
+        phx-click="toggle"
+        class="flex items-center space-x-3 text-gray-700 hover:bg-gray-100 rounded-md px-3 py-2 w-full"
+      >
+        <div class="relative w-8 h-8 rounded-full overflow-hidden bg-gray-200">
+          <img
+            src={@current_user.avatar || "/placeholder.svg"}
+            alt="avatar"
+            class="object-cover w-full h-full"
+          />
+        </div>
+        <div class="text-left">
+          <p class="text-sm font-medium text-gray-900">{@current_user.name}</p>
+          <p class="text-xs text-gray-500">{@current_user.email}</p>
+        </div>
+      </button>
+
+      <%= if @show_dropdown do %>
+        <div class="absolute right-0 z-50 mt-2 w-56 bg-white border border-gray-200 rounded-md shadow-lg">
+          <div class="px-4 py-2 text-sm font-medium text-gray-900">
+            My Account
+          </div>
+          <div class="border-t border-gray-200 my-1"></div>
+
+          <.link href="/logout">
+            <button
+              class="w-full flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 cursor-pointer"
+              phx-click="logout"
+            >
+              Log out
+            </button>
+          </.link>
+        </div>
+      <% end %>
+    </div>
+    """
+  end
+
+  def integrations(assigns) do
+    ~H"""
+    <div class="rounded-lg border bg-card text-card-foreground shadow-sm border border-gray-200 shadow-sm">
+      <div class="flex flex-col space-y-1.5 p-6">
+        <div class="font-semibold leading-none tracking-tight text-lg text-gray-900">
+          Integrations
+        </div>
+        <div class="text-sm text-muted-foreground text-gray-600">
+          Manage your connected services and data sources
+        </div>
+      </div>
+      <div class="p-6 pt-0 space-y-4">
+        <%= for integration <- @integrations do %>
+          <div class={
+          "p-4 rounded-lg border-2 " <>
+          if integration["status"] == "connected", do: "border-green-200 bg-green-50", else: "border-gray-200 bg-gray-50"
+        }>
+            <div class="flex items-center justify-between">
+              <div class="flex items-center space-x-3">
+                <%= if integration["status"] == "connected" do %>
+                  <.icon name="hero-check-circle" class="h-5 w-5 text-green-600" />
+                <% else %>
+                  <div class="h-5 w-5 rounded-full border-2 border-gray-300" />
+                <% end %>
+
+                <div>
+                  <p class="font-medium text-gray-900">{integration["name"]}</p>
+                  <p class="text-sm text-gray-600">{integration["description"]}</p>
+                </div>
+              </div>
+
+              <div class="flex items-center space-x-2">
+                <%= if integration["status"] == "disconnected" do %>
+                  <.link href="/auth/hubspot">
+                    <button
+                      phx-click="sync_integration"
+                      phx-value-name={integration["name"]}
+                      class="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded-md"
+                    >
+                      Connect {integration["name"]}
+                    </button>
+                  </.link>
+                <% end %>
+              </div>
+            </div>
+          </div>
+        <% end %>
+      </div>
+    </div>
+    """
+  end
+
+  def switch(assigns) do
+    ~H"""
+    <div class="flex items-center gap-2">
+      <div
+        phx-click="toggle_instruction"
+        phx-value-id={@id}
+        class={[
+          "peer inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full border-2 transition-colors duration-200",
+          @checked && "bg-green-100",
+          !@checked && "bg-gray-100",
+          "focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+        ]}
+        role="switch"
+        aria-checked={@checked}
+        tabindex="0"
+      >
+        <span class={[
+          "pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-lg ring-0 transition duration-200",
+          @checked && "translate-x-5",
+          !@checked && "translate-x-0"
+        ]} />
+      </div>
+    </div>
+    """
+  end
+
+  def ongoing_instructions(assigns) do
+    ~H"""
+    <div class="rounded-lg border bg-card text-card-foreground shadow-sm border-gray-200">
+      <div class="flex flex-col space-y-1.5 p-6">
+        <div class="flex items-center justify-between">
+          <div>
+            <div class="font-semibold leading-none tracking-tight text-lg text-gray-900 flex items-center">
+              <.icon name="hero-bolt" class="mr-2 h-5 w-5" /> Ongoing Instructions
+            </div>
+            <div class="text-sm mt-2 text-muted-foreground text-gray-600">
+              Automated rules that guide your AI assistant's behavior
+            </div>
+          </div>
+          <button
+            phx-click={show_modal("my-modal")}
+            class="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded-md"
+          >
+            Add Instruction
+          </button>
+        </div>
+      </div>
+
+      <div class="p-6 pt-0">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <%= for instruction <- @ongoing_instructions do %>
+            <div class="p-4 rounded-lg border border-gray-200 bg-gray-50">
+              <div class="flex items-start justify-between mb-3">
+                <p class="text-sm text-gray-900 flex-1 pr-2">
+                  {instruction["instruction"]}
+                </p>
+                <.switch
+                  id={"instruction-#{instruction["id"]}"}
+                  checked={instruction["active"]}
+                  id={instruction["id"]}
+                />
+              </div>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    </div>
+    """
+  end
+
   @impl true
   def render(assigns) do
     ~H"""
-    <div class="flex flex-col bg-white p-4">
-      <.button phx-click={show_modal("my-modal")}>Open Modal</.button>
-      <button
-        phx-click="sync_gmail"
-        class="px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700"
-      >
-        Sync Gmail
-      </button>
-      <button
-        phx-click="sync_calendar"
-        class="px-3 py-1 text-sm bg-green-600 text-white rounded hover:bg-green-700"
-      >
-       Sync Calendar
-      </button>
-       <button
-        phx-click="sync_hubspot"
-        class="px-3 py-1 text-sm bg-yellow-600 text-white rounded hover:bg-yellow-700"
-      >
-       Sync Hubspot
-      </button>
+    <div class="bg-gray-50 min-h-screen">
+      <.main_header current_user={@current_user} show_dropdown={@show_dropdown} />
+      <div class="p-6 space-y-6">
+        <div class="max-w-7xl mx-auto">
+          <div class="space-y-6">
+            <.integrations integrations={@integrations} />
+            <.ongoing_instructions ongoing_instructions={@ongoing_instructions} />
+          </div>
+        </div>
+      </div>
       <.modal id="my-modal" on_cancel={JS.push("close_modal")}>
         <div class="h-[90vh] w-full overflow-auto">
           <div class="flex flex-col overflow-hidden h-[90vh]">

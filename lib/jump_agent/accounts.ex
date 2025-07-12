@@ -86,16 +86,18 @@ defmodule JumpAgent.Accounts do
     |> Repo.insert()
   end
 
-  def update_user_oauth_tokens_on_login(%User{} = user, %{
+  def update_user_on_login(%User{} = user, %{
         token: token,
         refresh_token: refresh_token,
-        expires_at: expires_at
+        expires_at: expires_at,
+        avatar: avatar
       }) do
     user
     |> Ecto.Changeset.change(%{
       token: token,
       refresh_token: refresh_token,
-      expires_at: expires_at
+      expires_at: expires_at,
+      avatar: avatar
     })
     |> Repo.update()
   end
