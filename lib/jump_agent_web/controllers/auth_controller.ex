@@ -50,14 +50,26 @@ defmodule JumpAgentWeb.AuthController do
         end
 
       user ->
-        # User exists, update session or other details if necessary
-        UserAuth.log_in_user(conn, user)
+        user_params = %{
+          token: auth.credentials.token,
+          refresh_token: auth.credentials.refresh_token,
+          expires_at: DateTime.from_unix!(auth.credentials.expires_at)
+        }
+
+        case Accounts.update_user_oauth_tokens_on_login(user, user_params) do
+          {:ok, user} ->
+            UserAuth.log_in_user(conn, user)
+
+          {:error, changeset} ->
+            Logger.error("Failed to update user #{inspect(changeset)}.")
+
+            conn
+            |> redirect(to: ~p"/")
+        end
     end
   end
 
   def callback(%{assigns: %{ueberauth_failure: fails}} = conn, _params) do
-    IO.inspect(fails)
-
     conn
     |> put_flash(:error, "Google Auth failed")
     |> redirect(to: "/")
@@ -109,11 +121,9 @@ defmodule JumpAgentWeb.AuthController do
         end
 
       {:ok, resp} ->
-        IO.inspect(resp, label: "Unexpected HubSpot response")
         conn |> put_flash(:error, "HubSpot login failed") |> redirect(to: "/")
 
       {:error, err} ->
-        IO.inspect(err, label: "HTTP error")
         conn |> put_flash(:error, "HubSpot login failed") |> redirect(to: "/")
     end
   end

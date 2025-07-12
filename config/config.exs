@@ -67,7 +67,9 @@ config :ueberauth, Ueberauth,
       Ueberauth.Strategy.Google,
       [
         default_scope:
-          "email profile https://www.googleapis.com/auth/gmail.readonly https://www.googleapis.com/auth/calendar"
+          "email profile https://www.googleapis.com/auth/gmail.readonly https://www.googleapis.com/auth/calendar",
+        access_type: "offline",
+        prompt: "consent"
       ]
     }
   ]
@@ -85,6 +87,8 @@ config :jump_agent, :hubspot,
 config :jump_agent, :openai,
   api_key:
     "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"
+
+config :jump_agent, JumpAgent.Repo, types: JumpAgent.PostgrexTypes
 
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.

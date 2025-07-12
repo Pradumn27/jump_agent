@@ -153,6 +153,19 @@ defmodule JumpAgentWeb.ChatLive do
      |> assign(:current_tab, "chat")}
   end
 
+  def handle_event("sync_gmail", _params, socket) do
+    user = socket.assigns.current_user
+
+    case JumpAgent.Integrations.Gmail.fetch_recent_emails(user) do
+      {:error, err} ->
+        Logger.error("Gmail sync failed: #{inspect(err)}")
+        {:noreply, put_flash(socket, :error, "Failed to sync Gmail.")}
+
+      _ ->
+        {:noreply, put_flash(socket, :info, "Gmail synced successfully.")}
+    end
+  end
+
   @impl true
   def handle_info({:ai_response, reply}, socket) do
     updated_messages =
@@ -395,7 +408,13 @@ defmodule JumpAgentWeb.ChatLive do
     ~H"""
     <div class="flex flex-col bg-white p-4">
       <.button phx-click={show_modal("my-modal")}>Open Modal</.button>
-      <.modal id="my-modal" on_cancel={JS.push("close_modal")} show={true}>
+      <button
+        phx-click="sync_gmail"
+        class="px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700"
+      >
+        Sync Gmail
+      </button>
+      <.modal id="my-modal" on_cancel={JS.push("close_modal")}>
         <div class="h-[90vh] w-full overflow-auto">
           <div class="flex flex-col overflow-hidden h-[90vh]">
             <.chat_header current_tab={@current_tab} />

@@ -26,7 +26,7 @@ defmodule JumpAgent.Accounts.User do
   def registration_oauth_changeset(user, attrs, _opts \\ []) do
     user
     |> cast(attrs, [:email, :name, :provider, :token, :refresh_token, :expires_at])
-    |> validate_required([:email, :token])
+    |> validate_required([:email, :token, :refresh_token])
     |> unique_constraint(:email)
   end
 

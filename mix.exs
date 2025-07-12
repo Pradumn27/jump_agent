@@ -63,7 +63,11 @@ defmodule JumpAgent.MixProject do
       {:ueberauth_google, "~> 0.11"},
       {:plug_cowboy, "~> 2.0"},
       {:oauth2, "~> 2.0"},
-      {:httpoison, "~> 2.0"}
+      {:httpoison, "~> 2.0"},
+      {:google_api_gmail, "~> 0.17"},
+      {:goth, "~> 1.4"},
+      {:req, "~> 0.5.14"},
+      {:pgvector, "~> 0.3.0"}
     ]
   end
 
