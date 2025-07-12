@@ -124,14 +124,6 @@ defmodule JumpAgentWeb.CoreComponents do
     """
   end
 
-  def google_auth_button(assigns) do
-    ~H"""
-    <.link navigate="/auth/google">
-      <.button>Login with Google</.button>
-    </.link>
-    """
-  end
-
   @doc """
   Shows the flash group with standard titles and content.
 
@@ -229,7 +221,7 @@ defmodule JumpAgentWeb.CoreComponents do
     <button
       type={@type}
       class={[
-        "phx-submit-loading:opacity-75 rounded-lg bg-zinc-900 hover:bg-zinc-700 py-2 px-3",
+        "phx-submit-loading:opacity-75 rounded-lg py-2 px-3",
         "text-sm font-semibold leading-6 text-white active:text-white/80",
         @class
       ]}

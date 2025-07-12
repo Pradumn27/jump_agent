@@ -1,5 +1,8 @@
-@import "tailwindcss/base";
-@import "tailwindcss/components";
-@import "tailwindcss/utilities";
+@import 'tailwindcss/base';
+@import 'tailwindcss/components';
+@import 'tailwindcss/utilities';
 
 /* This file is for your main application CSS */
+.bg-jump-gradient {
+  background: linear-gradient(90deg, #11b424, #1a86c4);
+}
