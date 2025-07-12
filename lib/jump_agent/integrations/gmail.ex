@@ -67,4 +67,48 @@ defmodule JumpAgent.Integrations.Gmail do
   defp expired?(datetime) do
     DateTime.compare(datetime, DateTime.utc_now()) == :lt
   end
+
+  def send_email(user, to, subject, body) do
+    # from oauth, or refresh if needed
+    refresh_token = user.refresh_token
+    {:ok, access_token} = JumpAgent.OAuth.Google.refresh_token(refresh_token)
+
+    raw =
+      %{
+        to: to,
+        subject: subject,
+        body: body
+      }
+      |> encode_mime()
+
+    headers = [
+      {"Authorization", "Bearer #{access_token}"},
+      {"Content-Type", "application/json"}
+    ]
+
+    payload =
+      Jason.encode!(%{
+        "raw" => Base.encode64(raw, padding: false)
+      })
+
+    HTTPoison.post(
+      "https://gmail.googleapis.com/gmail/v1/users/me/messages/send",
+      payload,
+      headers
+    )
+    |> case do
+      {:ok, %HTTPoison.Response{status_code: 200}} -> :ok
+      error -> {:error, error}
+    end
+  end
+
+  defp encode_mime(%{to: to, subject: subject, body: body}) do
+    """
+    To: #{to}
+    Subject: #{subject}
+    Content-Type: text/plain; charset="UTF-8"
+
+    #{body}
+    """
+  end
 end
