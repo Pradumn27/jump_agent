@@ -15,7 +15,7 @@ defmodule JumpAgent.OAuth.Google do
     headers = [{"Content-Type", "application/x-www-form-urlencoded"}]
 
     case Req.post(@token_url, body: body, headers: headers) do
-      {:ok, %{status: 200, body: %{"access_token" => token, "expires_in" => expires_in}}} ->
+      {:ok, %{status: 200, body: %{"access_token" => token}}} ->
         {:ok, token}
 
       error ->

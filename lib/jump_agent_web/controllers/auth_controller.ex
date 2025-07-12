@@ -69,7 +69,7 @@ defmodule JumpAgentWeb.AuthController do
     end
   end
 
-  def callback(%{assigns: %{ueberauth_failure: fails}} = conn, _params) do
+  def callback(%{assigns: %{ueberauth_failure: _fails}} = conn, _params) do
     conn
     |> put_flash(:error, "Google Auth failed")
     |> redirect(to: "/")
@@ -120,10 +120,10 @@ defmodule JumpAgentWeb.AuthController do
             conn |> put_flash(:error, "Failed to decode token response") |> redirect(to: "/")
         end
 
-      {:ok, resp} ->
+      {:ok, _resp} ->
         conn |> put_flash(:error, "HubSpot login failed") |> redirect(to: "/")
 
-      {:error, err} ->
+      {:error, _err} ->
         conn |> put_flash(:error, "HubSpot login failed") |> redirect(to: "/")
     end
   end

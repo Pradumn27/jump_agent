@@ -166,6 +166,19 @@ defmodule JumpAgentWeb.ChatLive do
     end
   end
 
+  def handle_event("sync_calendar", _params, socket) do
+    user = socket.assigns.current_user
+
+    case JumpAgent.Integrations.Calendar.sync_upcoming_events(user) do
+      {:ok, _} ->
+        {:noreply, put_flash(socket, :info, "Calendar synced successfully.")}
+
+      {:error, err} ->
+        Logger.error("Calendar sync failed: #{inspect(err)}")
+        {:noreply, put_flash(socket, :error, "Failed to sync Calendar.")}
+    end
+  end
+
   @impl true
   def handle_info({:ai_response, reply}, socket) do
     updated_messages =
@@ -413,6 +426,12 @@ defmodule JumpAgentWeb.ChatLive do
         class="px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700"
       >
         Sync Gmail
+      </button>
+      <button
+        phx-click="sync_calendar"
+        class="px-3 py-1 text-sm bg-green-600 text-white rounded hover:bg-green-700"
+      >
+      Sync Calendar
       </button>
       <.modal id="my-modal" on_cancel={JS.push("close_modal")}>
         <div class="h-[90vh] w-full overflow-auto">

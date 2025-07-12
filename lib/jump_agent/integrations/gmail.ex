@@ -50,8 +50,6 @@ defmodule JumpAgent.Integrations.Gmail do
   end
 
   defp get_google_token(user) do
-    user = Accounts.get_user!(user.id)
-
     case Accounts.get_user!(user.id) do
       %{token: token, refresh_token: refresh_token, expires_at: expires_at} ->
         if expired?(expires_at) do

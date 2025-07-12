@@ -7,14 +7,12 @@ defmodule JumpAgent.OpenAI do
   def chat_completion(user_prompt, user) do
     api_key = Application.get_env(:jump_agent, :openai)[:api_key]
 
-    # Step 1: Embed the prompt
     embedding = Embedding.generate(user_prompt)
 
-    # Step 2: Retrieve relevant context from DB
     contexts =
       Knowledge.search_similar_contexts(embedding, 100)
 
-    # |> filter_by_user(user_id)
+    # |> filter_by_user(user.id)
 
     context_text =
       contexts
@@ -23,7 +21,6 @@ defmodule JumpAgent.OpenAI do
 
     IO.puts(context_text)
 
-    # Step 3: Construct final RAG prompt
     final_prompt = """
     You are a helpful assistant. Use the following context if relevant:
 
