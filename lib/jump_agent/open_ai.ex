@@ -1,9 +1,38 @@
 defmodule JumpAgent.OpenAI do
   @moduledoc false
   require Logger
+  alias JumpAgent.Embedding
+  alias JumpAgent.Knowledge
 
-  def chat_completion(prompt) do
+  def chat_completion(user_prompt, user) do
     api_key = Application.get_env(:jump_agent, :openai)[:api_key]
+
+    # Step 1: Embed the prompt
+    embedding = Embedding.generate(user_prompt)
+
+    # Step 2: Retrieve relevant context from DB
+    contexts =
+      Knowledge.search_similar_contexts(embedding, 100)
+
+    # |> filter_by_user(user_id)
+
+    context_text =
+      contexts
+      |> Enum.map(& &1.content)
+      |> Enum.join("\n\n")
+
+    IO.puts(context_text)
+
+    # Step 3: Construct final RAG prompt
+    final_prompt = """
+    You are a helpful assistant. Use the following context if relevant:
+
+    #{context_text}
+
+    User has the email #{user.email}
+
+    User Question: #{user_prompt}
+    """
 
     headers = [
       {"Content-Type", "application/json"},
@@ -14,8 +43,7 @@ defmodule JumpAgent.OpenAI do
       Jason.encode!(%{
         model: "gpt-3.5-turbo",
         messages: [
-          %{role: "system", content: "You are a helpful assistant."},
-          %{role: "user", content: prompt}
+          %{role: "system", content: final_prompt}
         ]
       })
 

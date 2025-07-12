@@ -112,4 +112,15 @@ defmodule JumpAgent.Knowledge do
       changeset
     end
   end
+
+  @doc """
+  Finds top N similar context entries based on a given embedding.
+  """
+  def search_similar_contexts(embedding, limit \\ 5) do
+    from(c in Context,
+      order_by: fragment("embedding <#> ?", ^embedding),
+      limit: ^limit
+    )
+    |> Repo.all()
+  end
 end

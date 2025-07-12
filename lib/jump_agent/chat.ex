@@ -8,6 +8,9 @@ defmodule JumpAgent.Chat do
 
   alias JumpAgent.Chat.ChatSession
 
+  alias JumpAgent.Knowledge
+  alias JumpAgent.Embedding
+
   @doc """
   Returns the list of chat_sessions.
 

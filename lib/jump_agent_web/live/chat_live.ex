@@ -54,7 +54,7 @@ defmodule JumpAgentWeb.ChatLive do
       })
 
     spawn(fn ->
-      case JumpAgent.OpenAI.chat_completion(message) do
+      case JumpAgent.OpenAI.chat_completion(message, socket.assigns.current_user) do
         {:ok, reply} ->
           JumpAgent.Chat.create_message(%{
             role: "assistant",
@@ -306,8 +306,8 @@ defmodule JumpAgentWeb.ChatLive do
   @spec chat_component(any()) :: Phoenix.LiveView.Rendered.t()
   def chat_component(assigns) do
     ~H"""
-    <div class="flex h-full relative flex-col overflow-auto">
-      <div class="flex-1 overflow-auto px-4 py-6 space-y-6">
+    <div  class="flex h-full relative flex-col overflow-auto">
+      <div id="chat-scroll" phx-hook="ScrollBottom"  class="flex-1 overflow-auto px-4 py-6 space-y-6">
         <%= for message <- @messages do %>
           <%= if message.role == "user" do %>
             <.user_message content={message.content} />
