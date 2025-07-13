@@ -2,9 +2,9 @@ defmodule JumpAgent.Automations.TriggerHandlers do
   require Logger
   alias JumpAgent.Automations.Triggers.{GmailTrigger, CalendarTrigger, HubspotTrigger}
 
-  def process_trigger(trigger, instruction) do
-    case handle(trigger, instruction) do
-      :ok -> "Executed Instruction #{instruction.id}"
+  def process_trigger(watch_instruction) do
+    case handle(watch_instruction.trigger, watch_instruction.instruction) do
+      :ok -> "Executed Instruction #{watch_instruction.instruction.id}"
       {:error, reason} -> Logger.error("Failed to execute: #{inspect(reason)}")
     end
   end

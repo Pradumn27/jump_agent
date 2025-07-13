@@ -6,6 +6,7 @@ defmodule JumpAgent.Automations.WatchEngine do
 
   alias JumpAgent.Automations.TriggerHandlers
   alias JumpAgent.WatchInstructions
+  require Logger
 
   use Oban.Worker, queue: :default, max_attempts: 1
 
@@ -14,11 +15,18 @@ defmodule JumpAgent.Automations.WatchEngine do
   def perform(_job) do
     now = DateTime.utc_now()
     cutoff = DateTime.add(now, -@interval_minutes * 60, :second)
-    IO.inspect("Cutoff: #{inspect(cutoff)}")
+    Logger.info("[WatchEngine] Running trigger evaluation at #{now}")
 
     WatchInstructions.get_due_instructions(cutoff)
-    |> Enum.each(fn instruction ->
-      TriggerHandlers.process_trigger(instruction.trigger, instruction.instruction)
+    |> Enum.each(fn watch_instruction ->
+      try do
+        TriggerHandlers.process_trigger(watch_instruction)
+      rescue
+        e ->
+          Logger.error(
+            "[WatchEngine] Failed for instruction #{watch_instruction.id}: #{inspect(e)}"
+          )
+      end
     end)
 
     :ok
