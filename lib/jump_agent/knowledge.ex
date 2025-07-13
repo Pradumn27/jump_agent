@@ -51,10 +51,21 @@ defmodule JumpAgent.Knowledge do
 
   """
   def create_context(attrs \\ %{}) do
-    %Context{}
-    |> Context.changeset(attrs)
-    |> maybe_embed_embedding()
-    |> Repo.insert()
+    try do
+      %Context{}
+      |> Context.changeset(attrs)
+      |> maybe_embed_embedding()
+      |> Repo.insert()
+    rescue
+      e in Ecto.ChangeError ->
+        {:error, {:change_error, e.message}}
+
+      e in DBConnection.ConnectionError ->
+        {:error, {:db_connection_error, e.message}}
+
+      e ->
+        {:error, {:unknown_error, Exception.message(e)}}
+    end
   end
 
   @doc """

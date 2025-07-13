@@ -35,14 +35,14 @@ defmodule JumpAgent.Integrations do
   def sync_integrations(user) do
     # Gmail
     try do
-      JumpAgent.Integrations.Gmail.fetch_recent_emails(user)
+      JumpAgent.Integrations.Gmail.fetch_recent_emails(user, 50)
     rescue
       e -> Logger.error("Failed to sync Gmail: #{inspect(e)}")
     end
 
     # Google Calendar
     try do
-      JumpAgent.Integrations.Calendar.sync_upcoming_events(user)
+      JumpAgent.Integrations.Calendar.sync_upcoming_events(user, 50)
     rescue
       e -> Logger.error("Failed to sync Calendar: #{inspect(e)}")
     end
@@ -51,8 +51,8 @@ defmodule JumpAgent.Integrations do
     case Accounts.get_auth_identity(user, "hubspot") do
       %{token: _token} ->
         try do
-          JumpAgent.Integrations.Hubspot.sync_contacts(user)
-          JumpAgent.Integrations.Hubspot.sync_notes(user)
+          JumpAgent.Integrations.Hubspot.sync_contacts(user, 50)
+          JumpAgent.Integrations.Hubspot.sync_notes(user, 50)
         rescue
           e -> Logger.error("Failed to sync HubSpot: #{inspect(e)}")
         end
