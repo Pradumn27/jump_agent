@@ -85,30 +85,30 @@ defmodule JumpAgent.Integrations.Calendar do
     end_time = Map.get(params, "end_time")
     attendees = Map.get(params, "attendees", [])
 
+    event = [
+      body: %GoogleApi.Calendar.V3.Model.Event{
+        summary: summary,
+        description: description,
+        location: location,
+        start: %GoogleApi.Calendar.V3.Model.EventDateTime{
+          dateTime: start_time,
+          timeZone: "Asia/Kolkata"
+        },
+        end: %GoogleApi.Calendar.V3.Model.EventDateTime{
+          dateTime: end_time,
+          timeZone: "Asia/Kolkata"
+        },
+        attendees:
+          Enum.map(attendees, fn email ->
+            %GoogleApi.Calendar.V3.Model.EventAttendee{email: email}
+          end)
+      }
+    ]
+
     with {:ok, token} <- get_google_token(user),
-         conn <- GoogleApi.Calendar.V3.Connection.new(token) do
-      event = [
-        body: %GoogleApi.Calendar.V3.Model.Event{
-          summary: summary,
-          description: description,
-          location: location,
-          start: %GoogleApi.Calendar.V3.Model.EventDateTime{
-            dateTime: start_time,
-            timeZone: "Asia/Kolkata"
-          },
-          end: %GoogleApi.Calendar.V3.Model.EventDateTime{
-            dateTime: end_time,
-            timeZone: "Asia/Kolkata"
-          },
-          attendees:
-            Enum.map(attendees, fn email ->
-              %GoogleApi.Calendar.V3.Model.EventAttendee{email: email}
-            end)
-        }
-      ]
-
-      GoogleApi.Calendar.V3.Api.Events.calendar_events_insert(conn, "primary", event, [])
-
+         conn <- GoogleApi.Calendar.V3.Connection.new(token),
+         {:ok, event} <-
+           GoogleApi.Calendar.V3.Api.Events.calendar_events_insert(conn, "primary", event, []) do
       Task.start(fn ->
         try do
           sync_upcoming_events(user, 10)
@@ -116,6 +116,8 @@ defmodule JumpAgent.Integrations.Calendar do
           e -> Logger.error("Calendar sync failed for user #{user.id}: #{inspect(e)}")
         end
       end)
+
+      {:ok, event}
     else
       error -> {:error, error}
     end
