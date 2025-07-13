@@ -130,6 +130,13 @@ defmodule JumpAgent.OpenAI do
   def send_tool_response_to_openai(previous_messages, tool_call_id, function_name, result) do
     api_key = Application.get_env(:jump_agent, :openai)[:api_key]
 
+    content =
+      case result do
+        {:ok, data} -> data
+        {:error, reason} -> %{"error" => inspect(reason)}
+        other -> %{"unexpected" => inspect(other)}
+      end
+
     new_messages =
       previous_messages ++
         [
@@ -147,7 +154,7 @@ defmodule JumpAgent.OpenAI do
             role: "tool",
             tool_call_id: tool_call_id,
             name: function_name,
-            content: result
+            content: Jason.encode!(content)
           }
         ]
 

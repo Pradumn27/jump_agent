@@ -146,6 +146,74 @@ defmodule JumpAgent.Tools do
             required: ["event_id", "new_start_time", "new_end_time"]
           }
         }
+      },
+      %{
+        type: "function",
+        function: %{
+          name: "create_contact",
+          description: "Creates a contact in HubSpot CRM",
+          parameters: %{
+            type: "object",
+            properties: %{
+              email: %{type: "string", description: "Email address of the contact"},
+              first_name: %{type: "string", description: "First name of the contact"},
+              last_name: %{type: "string", description: "Last name of the contact"},
+              phone: %{type: "string", description: "Phone number of the contact"}
+            },
+            required: ["email"]
+          }
+        }
+      },
+      %{
+        type: "function",
+        function: %{
+          name: "update_contact",
+          description: "Update an existing HubSpot contact",
+          parameters: %{
+            type: "object",
+            properties: %{
+              contact_id: %{type: "string", description: "The unique HubSpot contact ID"},
+              email: %{type: "string", description: "Updated email address"},
+              first_name: %{type: "string", description: "Updated first name"},
+              last_name: %{type: "string", description: "Updated last name"},
+              phone: %{type: "string", description: "Updated phone number"}
+            },
+            required: ["contact_id"]
+          }
+        }
+      },
+      %{
+        type: "function",
+        function: %{
+          name: "create_note",
+          description: "Create a note associated with a HubSpot contact",
+          parameters: %{
+            type: "object",
+            properties: %{
+              contact_id: %{
+                type: "string",
+                description: "HubSpot contact ID to attach the note to"
+              },
+              note: %{type: "string", description: "The note content to attach"}
+            },
+            required: ["contact_id", "note"]
+          }
+        }
+      },
+      %{
+        type: "function",
+        function: %{
+          name: "update_hubspot_note",
+          description: "Update a note in HubSpot by ID",
+          parameters: %{
+            type: "object",
+            properties: %{
+              note_id: %{type: "string", description: "The ID of the HubSpot note"},
+              body: %{type: "string", description: "The new content of the note"}
+            },
+            required: ["note_id", "body"]
+          }
+        }
       }
     ]
   end
@@ -168,6 +236,22 @@ defmodule JumpAgent.Tools do
 
   def dispatch_tool("reschedule_meeting", user, args) do
     reschedule_meeting(user, args)
+  end
+
+  def dispatch_tool("create_contact", user, args) do
+    JumpAgent.Integrations.Hubspot.create_contact(user, args)
+  end
+
+  def dispatch_tool("update_contact", user, args) do
+    JumpAgent.Integrations.Hubspot.update_contact(user, args)
+  end
+
+  def dispatch_tool("create_note", user, args) do
+    JumpAgent.Integrations.Hubspot.create_note(user, args)
+  end
+
+  def dispatch_tool("update_hubspot_note", user, args) do
+    JumpAgent.Integrations.Hubspot.update_note(user, args)
   end
 
   def dispatch_tool(tool_name, _args, _user) do
