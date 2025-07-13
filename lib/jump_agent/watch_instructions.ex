@@ -38,11 +38,13 @@ defmodule JumpAgent.WatchInstructions do
     WatchInstruction.changeset(wi, attrs)
   end
 
-  def get_by_trigger(trigger) when is_binary(trigger) do
-    from(wi in WatchInstruction,
-      where: wi.trigger == ^trigger,
-      join: u in assoc(wi, :user),
-      preload: [user: u]
+  def get_due_instructions(cutoff_dt) do
+    from(w in WatchInstruction,
+      where: w.is_active == true,
+      where:
+        (is_nil(w.last_executed_at) or w.last_executed_at < ^cutoff_dt) and
+          (w.frequency != "once" or is_nil(w.last_executed_at)),
+      preload: [:user]
     )
     |> Repo.all()
   end
