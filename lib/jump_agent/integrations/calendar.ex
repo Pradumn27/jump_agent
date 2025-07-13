@@ -9,7 +9,7 @@ defmodule JumpAgent.Integrations.Calendar do
          conn <- Connection.new(token),
          {:ok, %{items: events}} <-
            Events.calendar_events_list(conn, "primary",
-             maxResults: 10,
+             maxResults: 500,
              timeMin: DateTime.utc_now() |> DateTime.to_iso8601(),
              singleEvents: true,
              orderBy: "startTime"
@@ -25,11 +25,22 @@ defmodule JumpAgent.Integrations.Calendar do
     start_time =
       event.start.dateTime || event.start.date || "unknown"
 
+    end_time = event.end.dateTime || event.end.date || "unknown"
+
+    attendees =
+      (event.attendees || [])
+      |> Enum.map(& &1.email)
+      |> Enum.reject(&is_nil/1)
+      |> Enum.join(", ")
+
     content = """
     Event: #{event.summary || "No title"}
     Description: #{event.description || "No description"}
     Location: #{event.location || "No location"}
     Start Time: #{start_time}
+    End Time: #{end_time}
+    Attendees: #{attendees}
+    Event ID: #{event.id}
     """
 
     Knowledge.create_context(%{
@@ -38,8 +49,9 @@ defmodule JumpAgent.Integrations.Calendar do
       content: content,
       metadata: %{
         summary: event.summary,
+        location: event.location,
         start: start_time,
-        location: event.location
+        end: end_time
       },
       user_id: user.id
     })

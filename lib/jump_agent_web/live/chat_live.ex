@@ -592,6 +592,12 @@ defmodule JumpAgentWeb.ChatLive do
                     </button>
                   </.link>
                 <% end %>
+                <.button
+                  phx-click="sync_calendar"
+                  class="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded-md"
+                >
+                  Sync Calendar
+                </.button>
               </div>
             </div>
           </div>
