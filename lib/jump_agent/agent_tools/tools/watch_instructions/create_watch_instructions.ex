@@ -14,6 +14,7 @@ defmodule JumpAgent.Tools.WatchInstructions.CreateWatchInstruction do
         description: """
         Create a watch instruction to automate tasks based on a trigger.
         This tells the system to monitor a specific type of event ("gmail", "calendar", "hubspot") and run the given instruction when it happens.
+        Use this to register automation rules (watch instructions) that define what should happen when a specific trigger (gmail, calendar, hubspot) occurs. These instructions are not executed now but saved for future use.
         """,
         parameters: %{
           type: "object",

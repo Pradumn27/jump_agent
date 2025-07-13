@@ -35,7 +35,7 @@ defmodule JumpAgent.Integrations do
   def sync_integrations(user) do
     # Gmail
     try do
-      JumpAgent.Integrations.Gmail.fetch_recent_emails(user, 50)
+      JumpAgent.Integrations.Gmail.fetch_recent_emails(user, 10)
     rescue
       e -> Logger.error("Failed to sync Gmail: #{inspect(e)}")
     end
