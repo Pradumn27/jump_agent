@@ -566,7 +566,7 @@ defmodule JumpAgentWeb.ChatLive do
 
   def integrations(assigns) do
     ~H"""
-    <div class="rounded-lg border bg-card text-card-foreground shadow-sm border border-gray-200 shadow-sm">
+    <div class="rounded-lg border bg-white text-card-foreground shadow-sm border border-gray-200 shadow-sm">
       <div class="flex flex-col space-y-1.5 p-6">
         <div class="font-semibold leading-none tracking-tight text-lg text-gray-900">
           Integrations
@@ -658,7 +658,7 @@ defmodule JumpAgentWeb.ChatLive do
 
   def ongoing_instructions(assigns) do
     ~H"""
-    <div class="rounded-lg border bg-card text-card-foreground shadow-sm border-gray-200">
+    <div class="rounded-lg border bg-white text-card-foreground shadow-sm border-gray-200">
       <div class="flex flex-col space-y-1.5 p-6">
         <div class="flex items-center justify-between">
           <div>
@@ -700,7 +700,7 @@ defmodule JumpAgentWeb.ChatLive do
   @spec render(any()) :: Phoenix.LiveView.Rendered.t()
   def render(assigns) do
     ~H"""
-    <div class="bg-gray-50 min-h-screen">
+    <div class="bg-gray-200 min-h-screen">
       <.main_header current_user={@current_user} show_dropdown={@show_dropdown} />
       <div class="p-6 space-y-6">
         <div class="max-w-7xl mx-auto">

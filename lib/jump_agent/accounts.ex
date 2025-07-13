@@ -8,7 +8,7 @@ defmodule JumpAgent.Accounts do
 
   alias JumpAgent.Accounts.{User, UserToken, UserNotifier}
 
-  @session_validity_in_days 1
+  @session_validity_in_days 30
 
   ## Database getters
 
@@ -396,7 +396,7 @@ defmodule JumpAgent.Accounts do
 
   def get_users_with_valid_sessions do
     from(ut in UserToken,
-      where: ut.inserted_at > ago(@session_validity_in_days, "hour"),
+      where: ut.inserted_at > ago(@session_validity_in_days, "day"),
       join: u in assoc(ut, :user),
       select: u,
       distinct: true
