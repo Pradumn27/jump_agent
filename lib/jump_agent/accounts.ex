@@ -388,6 +388,12 @@ defmodule JumpAgent.Accounts do
     |> Enum.find(fn identity -> identity.provider == provider end)
   end
 
+  def update_auth_identity(identity, attrs) do
+    identity
+    |> JumpAgent.Accounts.AuthIdentity.changeset(attrs)
+    |> Repo.update()
+  end
+
   def get_users_with_valid_sessions do
     from(ut in UserToken,
       where: ut.inserted_at > ago(@session_validity_in_days, "hour"),
@@ -396,5 +402,12 @@ defmodule JumpAgent.Accounts do
       distinct: true
     )
     |> Repo.all()
+  end
+
+  def disconnect_auth_identity(%User{} = user, provider) when is_binary(provider) do
+    case get_auth_identity(user, provider) do
+      nil -> {:error, :not_connected}
+      identity -> Repo.delete(identity)
+    end
   end
 end

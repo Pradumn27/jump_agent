@@ -1,6 +1,8 @@
 defmodule JumpAgent.Integrations.Hubspot do
   alias JumpAgent.Knowledge
   alias JumpAgent.Accounts
+  alias JumpAgent.Knowledge.Context
+  import Ecto.Query, warn: false
   require Logger
 
   @hubspot_base "https://api.hubapi.com"
@@ -35,12 +37,34 @@ defmodule JumpAgent.Integrations.Hubspot do
 
   defp get_token(user) do
     case Accounts.get_auth_identity(user, "hubspot") do
-      %{token: token} ->
-        {:ok, token}
+      %{token: token, refresh_token: refresh_token, expires_at: expires_at} = identity ->
+        if expired?(expires_at) do
+          case JumpAgent.OAuth.Hubspot.refresh_token(refresh_token) do
+            {:ok, %{access_token: new_token, expires_in: expires_in}} ->
+              new_expires_at = DateTime.add(DateTime.utc_now(), expires_in)
+              # Update the stored token
+              Accounts.update_auth_identity(identity, %{
+                token: new_token,
+                expires_at: new_expires_at
+              })
+
+              {:ok, new_token}
+
+            error ->
+              Logger.error("Failed to refresh HubSpot token: #{inspect(error)}")
+              {:error, :token_refresh_failed}
+          end
+        else
+          {:ok, token}
+        end
 
       _ ->
         {:error, :no_hubspot_auth}
     end
+  end
+
+  defp expired?(datetime) do
+    DateTime.compare(datetime, DateTime.utc_now()) == :lt
   end
 
   defp fetch_contacts(token) do
@@ -112,5 +136,25 @@ defmodule JumpAgent.Integrations.Hubspot do
       metadata: note["properties"],
       user_id: user.id
     })
+  end
+
+  def disconnect_hubspot(user) do
+    with {:ok, _} <- Accounts.disconnect_auth_identity(user, "hubspot"),
+         {:ok, _} <- delete_hubspot_contexts(user) do
+      {:ok, :disconnected}
+    else
+      error -> {:error, error}
+    end
+  end
+
+  defp delete_hubspot_contexts(user) do
+    sources = ["hubspot_contact", "hubspot_note"]
+
+    from(c in Context, where: c.user_id == ^user.id and c.source in ^sources)
+    |> JumpAgent.Repo.delete_all()
+    |> case do
+      {count, _} -> {:ok, count}
+      _ -> {:error, :deletion_failed}
+    end
   end
 end

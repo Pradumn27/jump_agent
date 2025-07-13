@@ -176,20 +176,8 @@ defmodule JumpAgentWeb.ChatLive do
      |> assign(:current_tab, "chat")}
   end
 
-  def handle_event("sync_gmail", _params, socket) do
-    user = socket.assigns.current_user
-
-    case JumpAgent.Integrations.Gmail.fetch_recent_emails(user) do
-      {:error, err} ->
-        Logger.error("Gmail sync failed: #{inspect(err)}")
-        {:noreply, put_flash(socket, :error, "Failed to sync Gmail.")}
-
-      _ ->
-        {:noreply, put_flash(socket, :info, "Gmail synced successfully.")}
-    end
-  end
-
-  def handle_event("sync_calendar", _params, socket) do
+  @impl true
+  def handle_event("sync_integration", %{"name" => "Google Calendar"}, socket) do
     user = socket.assigns.current_user
 
     case JumpAgent.Integrations.Calendar.sync_upcoming_events(user) do
@@ -202,7 +190,22 @@ defmodule JumpAgentWeb.ChatLive do
     end
   end
 
-  def handle_event("sync_hubspot", _params, socket) do
+  @impl true
+  def handle_event("sync_integration", %{"name" => "Gmail"}, socket) do
+    user = socket.assigns.current_user
+
+    case JumpAgent.Integrations.Gmail.fetch_recent_emails(user) do
+      {:error, err} ->
+        Logger.error("Gmail sync failed: #{inspect(err)}")
+        {:noreply, put_flash(socket, :error, "Failed to sync Gmail.")}
+
+      _ ->
+        {:noreply, put_flash(socket, :info, "Gmail synced successfully.")}
+    end
+  end
+
+  @impl true
+  def handle_event("sync_integration", %{"name" => "HubSpot"}, socket) do
     user = socket.assigns.current_user
 
     case JumpAgent.Integrations.Hubspot.sync_contacts(user) do
@@ -212,6 +215,18 @@ defmodule JumpAgentWeb.ChatLive do
 
       {:error, err} ->
         {:noreply, put_flash(socket, :error, "Failed to sync HubSpot: #{inspect(err)}")}
+    end
+  end
+
+  def handle_event("disconnect_integration", %{"name" => "HubSpot"}, socket) do
+    case JumpAgent.Integrations.Hubspot.disconnect_hubspot(socket.assigns.current_user) do
+      {:ok, _} ->
+        integrations = JumpAgent.Integrations.get_integrations(socket.assigns.current_user)
+        {:noreply, assign(socket, integrations: integrations)}
+
+      {:error, reason} ->
+        Logger.error("Failed to disconnect HubSpot: #{inspect(reason)}")
+        {:noreply, socket}
     end
   end
 
@@ -583,21 +598,29 @@ defmodule JumpAgentWeb.ChatLive do
               <div class="flex items-center space-x-2">
                 <%= if integration["status"] == "disconnected" do %>
                   <.link href="/auth/hubspot">
-                    <button
-                      phx-click="sync_integration"
-                      phx-value-name={integration["name"]}
-                      class="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded-md"
-                    >
+                    <button class="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded-md">
                       Connect {integration["name"]}
                     </button>
                   </.link>
                 <% end %>
-                <.button
-                  phx-click="sync_calendar"
-                  class="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded-md"
-                >
-                  Sync Calendar
-                </.button>
+                <%= if integration["status"] == "connected" && integration["name"] == "HubSpot" do %>
+                  <.button
+                    phx-click="disconnect_integration"
+                    phx-value-name={integration["name"]}
+                    class="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded-md"
+                  >
+                    Disconnect
+                  </.button>
+                <% end %>
+                <%= if integration["status"] == "connected" do %>
+                  <div
+                    phx-click="sync_integration"
+                    phx-value-name={integration["name"]}
+                    class="cursor-pointer bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded-md"
+                  >
+                    Sync
+                  </div>
+                <% end %>
               </div>
             </div>
           </div>
