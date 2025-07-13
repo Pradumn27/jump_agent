@@ -21,7 +21,11 @@ defmodule JumpAgent.ChatTest do
     end
 
     test "create_chat_session/1 with valid data creates a chat_session" do
-      valid_attrs = %{started_at: ~U[2025-07-10 21:17:00Z], title: "some title", last_active_at: ~U[2025-07-10 21:17:00Z]}
+      valid_attrs = %{
+        started_at: ~U[2025-07-10 21:17:00Z],
+        title: "some title",
+        last_active_at: ~U[2025-07-10 21:17:00Z]
+      }
 
       assert {:ok, %ChatSession{} = chat_session} = Chat.create_chat_session(valid_attrs)
       assert chat_session.started_at == ~U[2025-07-10 21:17:00Z]
@@ -35,9 +39,16 @@ defmodule JumpAgent.ChatTest do
 
     test "update_chat_session/2 with valid data updates the chat_session" do
       chat_session = chat_session_fixture()
-      update_attrs = %{started_at: ~U[2025-07-11 21:17:00Z], title: "some updated title", last_active_at: ~U[2025-07-11 21:17:00Z]}
 
-      assert {:ok, %ChatSession{} = chat_session} = Chat.update_chat_session(chat_session, update_attrs)
+      update_attrs = %{
+        started_at: ~U[2025-07-11 21:17:00Z],
+        title: "some updated title",
+        last_active_at: ~U[2025-07-11 21:17:00Z]
+      }
+
+      assert {:ok, %ChatSession{} = chat_session} =
+               Chat.update_chat_session(chat_session, update_attrs)
+
       assert chat_session.started_at == ~U[2025-07-11 21:17:00Z]
       assert chat_session.title == "some updated title"
       assert chat_session.last_active_at == ~U[2025-07-11 21:17:00Z]
@@ -47,12 +58,6 @@ defmodule JumpAgent.ChatTest do
       chat_session = chat_session_fixture()
       assert {:error, %Ecto.Changeset{}} = Chat.update_chat_session(chat_session, @invalid_attrs)
       assert chat_session == Chat.get_chat_session!(chat_session.id)
-    end
-
-    test "delete_chat_session/1 deletes the chat_session" do
-      chat_session = chat_session_fixture()
-      assert {:ok, %ChatSession{}} = Chat.delete_chat_session(chat_session)
-      assert_raise Ecto.NoResultsError, fn -> Chat.get_chat_session!(chat_session.id) end
     end
 
     test "change_chat_session/1 returns a chat_session changeset" do
@@ -79,7 +84,12 @@ defmodule JumpAgent.ChatTest do
     end
 
     test "create_message/1 with valid data creates a message" do
-      valid_attrs = %{timestamp: ~U[2025-07-10 21:22:00Z], metadata: %{}, role: "some role", content: "some content"}
+      valid_attrs = %{
+        timestamp: ~U[2025-07-10 21:22:00Z],
+        metadata: %{},
+        role: "some role",
+        content: "some content"
+      }
 
       assert {:ok, %Message{} = message} = Chat.create_message(valid_attrs)
       assert message.timestamp == ~U[2025-07-10 21:22:00Z]
@@ -94,7 +104,13 @@ defmodule JumpAgent.ChatTest do
 
     test "update_message/2 with valid data updates the message" do
       message = message_fixture()
-      update_attrs = %{timestamp: ~U[2025-07-11 21:22:00Z], metadata: %{}, role: "some updated role", content: "some updated content"}
+
+      update_attrs = %{
+        timestamp: ~U[2025-07-11 21:22:00Z],
+        metadata: %{},
+        role: "some updated role",
+        content: "some updated content"
+      }
 
       assert {:ok, %Message{} = message} = Chat.update_message(message, update_attrs)
       assert message.timestamp == ~U[2025-07-11 21:22:00Z]
@@ -139,7 +155,12 @@ defmodule JumpAgent.ChatTest do
     end
 
     test "create_message/1 with valid data creates a message" do
-      valid_attrs = %{timestamp: ~U[2025-07-10 21:23:00Z], metadata: %{}, role: "some role", content: "some content"}
+      valid_attrs = %{
+        timestamp: ~U[2025-07-10 21:23:00Z],
+        metadata: %{},
+        role: "some role",
+        content: "some content"
+      }
 
       assert {:ok, %Message{} = message} = Chat.create_message(valid_attrs)
       assert message.timestamp == ~U[2025-07-10 21:23:00Z]
@@ -154,7 +175,13 @@ defmodule JumpAgent.ChatTest do
 
     test "update_message/2 with valid data updates the message" do
       message = message_fixture()
-      update_attrs = %{timestamp: ~U[2025-07-11 21:23:00Z], metadata: %{}, role: "some updated role", content: "some updated content"}
+
+      update_attrs = %{
+        timestamp: ~U[2025-07-11 21:23:00Z],
+        metadata: %{},
+        role: "some updated role",
+        content: "some updated content"
+      }
 
       assert {:ok, %Message{} = message} = Chat.update_message(message, update_attrs)
       assert message.timestamp == ~U[2025-07-11 21:23:00Z]

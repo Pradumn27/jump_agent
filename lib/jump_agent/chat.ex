@@ -75,20 +75,10 @@ defmodule JumpAgent.Chat do
     |> Repo.update()
   end
 
-  @doc """
-  Deletes a chat_session.
-
-  ## Examples
-
-      iex> delete_chat_session(chat_session)
-      {:ok, %ChatSession{}}
-
-      iex> delete_chat_session(chat_session)
-      {:error, %Ecto.Changeset{}}
-
-  """
-  def delete_chat_session(%ChatSession{} = chat_session) do
-    Repo.delete(chat_session)
+  def delete_chat_session(id) do
+    id
+    |> get_chat_session!()
+    |> Repo.delete()
   end
 
   @doc """
@@ -256,12 +246,5 @@ defmodule JumpAgent.Chat do
       order_by: [desc: m.timestamp]
     )
     |> Repo.all()
-  end
-
-  def delete_chat_session_with_messages(%ChatSession{} = chat_session) do
-    Repo.transaction(fn ->
-      from(m in Message, where: m.chat_session_id == ^chat_session.id) |> Repo.delete_all()
-      delete_chat_session(chat_session)
-    end)
   end
 end

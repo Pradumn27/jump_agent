@@ -31,7 +31,7 @@ defmodule JumpAgentWeb.Router do
 
     live_session :require_authenticated_user,
       on_mount: [{JumpAgentWeb.UserAuth, :ensure_authenticated}] do
-      live "/chat", ChatLive, :new
+      live "/dashboard", DashboardLive, :new
       get "/logout", UserSessionController, :delete
     end
   end
