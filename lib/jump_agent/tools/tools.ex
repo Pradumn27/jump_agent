@@ -214,6 +214,42 @@ defmodule JumpAgent.Tools do
             required: ["note_id", "body"]
           }
         }
+      },
+      %{
+        type: "function",
+        function: %{
+          name: "update_watch_instruction",
+          description:
+            "Update an existing WatchInstruction's trigger, filter, instruction or frequency",
+          parameters: %{
+            type: :object,
+            properties: %{
+              id: %{type: :integer, description: "The ID of the WatchInstruction to update"},
+              trigger: %{type: :string, description: "The updated trigger (optional)"},
+              instruction: %{type: :string, description: "The updated instruction (optional)"},
+              frequency: %{
+                type: :string,
+                enum: ["once", "always"],
+                description: "The updated frequency (optional)"
+              }
+            },
+            required: ["id"]
+          }
+        }
+      },
+      %{
+        name: "reply_to_email",
+        description: "Reply to an existing email thread in Gmail.",
+        parameters: %{
+          type: :object,
+          properties: %{
+            thread_id: %{type: :string, description: "Gmail thread ID of the original email"},
+            to: %{type: :string, description: "Email address of the recipient"},
+            subject: %{type: :string, description: "Subject of the reply"},
+            message: %{type: :string, description: "The body of the reply email"}
+          },
+          required: ["thread_id", "to", "subject", "message"]
+        }
       }
     ]
   end
@@ -252,6 +288,14 @@ defmodule JumpAgent.Tools do
 
   def dispatch_tool("update_hubspot_note", user, args) do
     JumpAgent.Integrations.Hubspot.update_note(user, args)
+  end
+
+  def dispatch_tool("update_watch_instruction", user, args) do
+    JumpAgent.WatchInstructions.update_watch_instruction(user, args)
+  end
+
+  def dispatch_tool("reply_to_email", user, args) do
+    JumpAgent.Integrations.Gmail.reply_to_email(user, args)
   end
 
   def dispatch_tool(tool_name, _args, _user) do

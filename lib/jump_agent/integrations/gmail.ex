@@ -3,6 +3,7 @@ defmodule JumpAgent.Integrations.Gmail do
   alias JumpAgent.Knowledge
   alias GoogleApi.Gmail.V1.Api.Users
   alias GoogleApi.Gmail.V1.Connection
+  require Logger
 
   def fetch_recent_emails(user, max_results \\ 500) do
     with {:ok, token} <- get_google_token(user),
@@ -221,5 +222,60 @@ defmodule JumpAgent.Integrations.Gmail do
           {:error, IO.inspect(reason, label: "Gmail error")}
       end
     end
+  end
+
+  def reply_to_email(user, %{
+        "thread_id" => thread_id,
+        "to" => to,
+        "subject" => subject,
+        "message" => message
+      }) do
+    with {:ok, token} <- get_google_token(user) do
+      raw =
+        encode_reply_mime(%{
+          to: to,
+          subject: subject,
+          message: message,
+          thread_id: thread_id
+        })
+
+      payload =
+        Jason.encode!(%{
+          "raw" => Base.encode64(raw, padding: false),
+          "threadId" => thread_id
+        })
+
+      headers = [
+        {"Authorization", "Bearer #{token}"},
+        {"Content-Type", "application/json"}
+      ]
+
+      url = "https://gmail.googleapis.com/gmail/v1/users/me/messages/send"
+
+      case HTTPoison.post(url, payload, headers) do
+        {:ok, %HTTPoison.Response{status_code: 200}} ->
+          {:ok, "Email reply sent successfully."}
+
+        {:ok, %HTTPoison.Response{status_code: code, body: body}} ->
+          Logger.error("Failed to reply to email: #{code} #{body}")
+          {:error, "Failed to send reply"}
+
+        {:error, reason} ->
+          Logger.error("HTTP error in reply_to_email: #{inspect(reason)}")
+          {:error, "HTTP error"}
+      end
+    end
+  end
+
+  defp encode_reply_mime(%{to: to, subject: subject, message: message, thread_id: thread_id}) do
+    """
+    To: #{to}
+    Subject: Re: #{subject}
+    In-Reply-To: #{thread_id}
+    References: #{thread_id}
+    Content-Type: text/plain; charset="UTF-8"
+
+    #{message}
+    """
   end
 end

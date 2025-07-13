@@ -24,12 +24,6 @@ defmodule JumpAgent.WatchInstructions do
     |> Repo.insert()
   end
 
-  def update_watch_instruction(%WatchInstruction{} = wi, attrs) do
-    wi
-    |> WatchInstruction.changeset(attrs)
-    |> Repo.update()
-  end
-
   def delete_watch_instruction(%WatchInstruction{} = wi) do
     Repo.delete(wi)
   end
@@ -47,5 +41,22 @@ defmodule JumpAgent.WatchInstructions do
       preload: [:user]
     )
     |> Repo.all()
+  end
+
+  def update_watch_instruction(user, %{"id" => id} = attrs) do
+    with %WatchInstruction{} = instruction <-
+           Repo.get_by(WatchInstruction, id: id, user_id: user.id),
+         {:ok, updated} <- do_update(instruction, Map.drop(attrs, ["id"])) do
+      {:ok, "Updated WatchInstruction ##{updated.id} successfully"}
+    else
+      nil -> {:error, "WatchInstruction not found"}
+      {:error, changeset} -> {:error, inspect(changeset.errors)}
+    end
+  end
+
+  defp do_update(instruction, updates) do
+    instruction
+    |> WatchInstruction.changeset(updates)
+    |> Repo.update()
   end
 end
