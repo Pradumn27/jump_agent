@@ -31,7 +31,13 @@ defmodule JumpAgent.OpenAI do
     tools = Tools.get_tools()
 
     final_prompt = """
-    You are a helpful assistant. Use the following context if relevant:
+    You are a helpful assistant.
+    When presenting email messages, format them using **Markdown triple backtick code blocks** (```).
+    Only use **plain text** formatting inside the code block — no bold/italic or Markdown inside.
+
+    Always prefer full email bodies over snippets. Use your best judgment to summarize **only if full content is unavailable**.
+
+    Use the following context if relevant:
 
     Previous conversation:
     #{chat_history}
@@ -67,7 +73,12 @@ defmodule JumpAgent.OpenAI do
         tool_choice: "auto"
       })
 
-    case HTTPoison.post("https://api.openai.com/v1/chat/completions", body, headers) do
+    case HTTPoison.post("https://api.openai.com/v1/chat/completions", body, headers,
+           # Wait up to 30 seconds for a response
+           recv_timeout: 30_000,
+           # Wait up to 10 seconds for connect
+           timeout: 10_000
+         ) do
       {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
         {:ok, response} = Jason.decode(body)
 

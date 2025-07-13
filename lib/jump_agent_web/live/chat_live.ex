@@ -363,8 +363,8 @@ defmodule JumpAgentWeb.ChatLive do
 
   def agent_message(assigns) do
     ~H"""
-    <div class="w-full p-4 rounded-lg">
-      {@content}
+    <div class="w-full p-4 rounded-lg prose max-w-none prose-invert">
+      {raw(Earmark.as_html!(@content))}
     </div>
     """
   end

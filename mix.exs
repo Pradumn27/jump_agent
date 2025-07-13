@@ -40,7 +40,6 @@ defmodule JumpAgent.MixProject do
       {:phoenix_html, "~> 4.1"},
       {:phoenix_live_reload, "~> 1.2", only: :dev},
       {:phoenix_live_view, "~> 1.0"},
-      {:floki, ">= 0.30.0", only: :test},
       {:phoenix_live_dashboard, "~> 0.8.3"},
       {:esbuild, "~> 0.8", runtime: Mix.env() == :dev},
       {:tailwind, "~> 0.2.0", runtime: Mix.env() == :dev},
@@ -69,7 +68,10 @@ defmodule JumpAgent.MixProject do
       {:req, "~> 0.5.14"},
       {:pgvector, "~> 0.3.0"},
       {:google_api_calendar, "~> 0.26.0"},
-      {:oban, "~> 2.19.4"}
+      {:oban, "~> 2.19.4"},
+      {:earmark, "~> 1.4"},
+      {:html_sanitize_ex, "~> 1.4"},
+      {:floki, "~> 0.38.0"}
     ]
   end
 
