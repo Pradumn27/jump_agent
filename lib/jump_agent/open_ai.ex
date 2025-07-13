@@ -111,10 +111,10 @@ defmodule JumpAgent.OpenAI do
     end
   end
 
-  def chat_completion_for_triggers(user_prompt, user) do
+  def chat_completion_for_triggers(trigger_instruction, user, last_executed_at \\ nil) do
     api_key = Application.get_env(:jump_agent, :openai)[:api_key]
 
-    embedding = Embedding.generate(user_prompt)
+    embedding = Embedding.generate(trigger_instruction)
 
     contexts =
       Knowledge.search_similar_contexts(embedding, user.id, 100)
@@ -125,24 +125,27 @@ defmodule JumpAgent.OpenAI do
       |> Enum.join("\n\n")
 
     final_prompt = """
-    You are a helpful assistant.
-    When presenting email messages, format them using **Markdown triple backtick code blocks** (```).
-    Only use **plain text** formatting inside the code block — no bold/italic or Markdown inside.
+    You are an autonomous assistant responding to an automation **triggered event**.
 
-    Always prefer full email bodies over snippets. Use your best judgment to summarize **only if full content is unavailable**.
+    This was **not manually asked by the user**, but generated as part of an automated instruction.
 
-    Use the following context if relevant:
+    Use the provided context and tools to take action automatically. Do not ask for confirmation.
+
+    Only consider **events that happened after** this time: #{DateTime.to_iso8601(last_executed_at || DateTime.utc_now())}
+
+    Use older context only if needed for reference, not for deciding what to act on.
+
+    <------------------------>
 
     Relevant knowledge context:
     #{context_text}
 
     <------------------------>
 
-    User has the email #{user.email}
+    Triggered instruction:
+    #{trigger_instruction}
 
-    <------------------------>
-
-    User Question: #{user_prompt}
+    User email: #{user.email}
     """
 
     tools = AgentTools.get_tools()
@@ -204,20 +207,6 @@ defmodule JumpAgent.OpenAI do
     end
   end
 
-  @spec send_tool_response_to_openai(list(), any(), any(), any()) ::
-          {:error, HTTPoison.Error.t()}
-          | {:ok,
-             %{
-               :__struct__ =>
-                 HTTPoison.AsyncResponse | HTTPoison.MaybeRedirect | HTTPoison.Response,
-               optional(:body) => any(),
-               optional(:headers) => list(),
-               optional(:id) => reference(),
-               optional(:redirect_url) => any(),
-               optional(:request) => HTTPoison.Request.t(),
-               optional(:request_url) => any(),
-               optional(:status_code) => integer()
-             }}
   def send_tool_response_to_openai(previous_messages, tool_call_id, function_name, result) do
     api_key = Application.get_env(:jump_agent, :openai)[:api_key]
 

@@ -6,6 +6,42 @@ defmodule JumpAgent.Tools.WatchInstructions.CreateWatchInstruction do
   alias JumpAgent.Automations.WatchInstruction
   alias JumpAgent.Repo
 
+  def spec do
+    %{
+      type: "function",
+      function: %{
+        name: "create_watch_instruction",
+        description: """
+        Create a watch instruction to automate tasks based on a trigger.
+        This tells the system to monitor a specific type of event ("gmail", "calendar", "hubspot") and run the given instruction when it happens.
+        """,
+        parameters: %{
+          type: "object",
+          properties: %{
+            trigger: %{
+              type: "string",
+              enum: ["gmail", "calendar", "hubspot"],
+              description:
+                "The type of trigger for the automation. One of: 'gmail', 'calendar', 'hubspot'"
+            },
+            instruction: %{
+              type: "string",
+              description:
+                "The instruction to execute when the trigger fires. This will be interpreted and executed by the AI."
+            },
+            frequency: %{
+              type: "string",
+              enum: ["once", "always"],
+              description:
+                "Whether this instruction should execute only once or every time the condition is met."
+            }
+          },
+          required: ["trigger", "instruction", "frequency"]
+        }
+      }
+    }
+  end
+
   @doc """
   Creates a watch instruction. Triggers can be one of:
   - "gmail": For email-based triggers
@@ -44,41 +80,5 @@ defmodule JumpAgent.Tools.WatchInstructions.CreateWatchInstruction do
         })
         |> Repo.insert()
     end
-  end
-
-  def spec do
-    %{
-      type: "function",
-      function: %{
-        name: "create_watch_instruction",
-        description: """
-        Create a watch instruction to automate tasks based on a trigger.
-        This tells the system to monitor a specific type of event ("gmail", "calendar", "hubspot") and run the given instruction when it happens.
-        """,
-        parameters: %{
-          type: "object",
-          properties: %{
-            trigger: %{
-              type: "string",
-              enum: ["gmail", "calendar", "hubspot"],
-              description:
-                "The type of trigger for the automation. One of: 'gmail', 'calendar', 'hubspot'"
-            },
-            instruction: %{
-              type: "string",
-              description:
-                "The instruction to execute when the trigger fires. This will be interpreted and executed by the AI."
-            },
-            frequency: %{
-              type: "string",
-              enum: ["once", "always"],
-              description:
-                "Whether this instruction should execute only once or every time the condition is met."
-            }
-          },
-          required: ["trigger", "instruction", "frequency"]
-        }
-      }
-    }
   end
 end

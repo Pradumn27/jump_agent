@@ -9,9 +9,9 @@ defmodule JumpAgent.Integrations.Hubspot do
   @contacts_endpoint "/crm/v3/objects/contacts"
   @notes_endpoint "/crm/v3/objects/notes"
 
-  def sync_contacts(user) do
+  def sync_contacts(user, max_results \\ 100) do
     with {:ok, token} <- get_token(user),
-         {:ok, contacts} <- fetch_contacts(token) do
+         {:ok, contacts} <- fetch_contacts(token, max_results) do
       Enum.each(contacts, fn contact ->
         store_contact_context(user, contact)
       end)
@@ -22,9 +22,9 @@ defmodule JumpAgent.Integrations.Hubspot do
     end
   end
 
-  def sync_notes(user) do
+  def sync_notes(user, max_results \\ 100) do
     with {:ok, token} <- get_token(user),
-         {:ok, notes} <- fetch_notes(token) do
+         {:ok, notes} <- fetch_notes(token, max_results) do
       Enum.each(notes, fn note ->
         store_note_context(user, note)
       end)
@@ -74,10 +74,10 @@ defmodule JumpAgent.Integrations.Hubspot do
     DateTime.compare(datetime, DateTime.utc_now()) == :lt
   end
 
-  defp fetch_contacts(token) do
+  defp fetch_contacts(token, max_results) do
     url =
       @hubspot_base <>
-        @contacts_endpoint <> "?limit=100&properties=firstname,lastname,email,phone"
+        @contacts_endpoint <> "?limit=#{max_results}&properties=firstname,lastname,email,phone"
 
     headers = [{"Authorization", "Bearer #{token}"}, {"Content-Type", "application/json"}]
 
@@ -94,8 +94,8 @@ defmodule JumpAgent.Integrations.Hubspot do
     end
   end
 
-  defp fetch_notes(token) do
-    url = @hubspot_base <> @notes_endpoint <> "?limit=100&properties=hs_note_body"
+  defp fetch_notes(token, max_results) do
+    url = @hubspot_base <> @notes_endpoint <> "?limit=#{max_results}&properties=hs_note_body"
 
     headers = [{"Authorization", "Bearer #{token}"}, {"Content-Type", "application/json"}]
 
