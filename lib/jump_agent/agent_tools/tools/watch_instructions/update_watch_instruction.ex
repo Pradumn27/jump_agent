@@ -31,7 +31,10 @@ defmodule JumpAgent.Tools.WatchInstructions.UpdateWatchInstruction do
     with %WatchInstruction{} = instruction <-
            Repo.get_by(WatchInstruction, id: id, user_id: user.id),
          {:ok, updated} <-
-           JumpAgent.WatchInstructions.do_update(instruction, Map.drop(attrs, ["id"])) do
+           JumpAgent.WatchInstructions.update_watch_instruction(
+             instruction,
+             Map.drop(attrs, ["id"])
+           ) do
       {:ok, "Updated WatchInstruction ##{updated.id} successfully"}
     else
       nil -> {:error, "WatchInstruction not found"}

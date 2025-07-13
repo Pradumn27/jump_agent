@@ -43,7 +43,7 @@ defmodule JumpAgent.WatchInstructions do
     |> Repo.all()
   end
 
-  def do_update(instruction, updates) do
+  def update_watch_instruction(instruction, updates) do
     instruction
     |> WatchInstruction.changeset(updates)
     |> Repo.update()
