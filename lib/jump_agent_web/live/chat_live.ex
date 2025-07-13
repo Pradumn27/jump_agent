@@ -686,11 +686,7 @@ defmodule JumpAgentWeb.ChatLive do
                 <p class="text-sm text-gray-900 flex-1 pr-2">
                   {instruction["instruction"]}
                 </p>
-                <.switch
-                  id={"instruction-#{instruction["id"]}"}
-                  checked={instruction["active"]}
-                  id={instruction["id"]}
-                />
+                <.switch checked={instruction["active"]} id={instruction["id"]} />
               </div>
             </div>
           <% end %>
@@ -701,6 +697,7 @@ defmodule JumpAgentWeb.ChatLive do
   end
 
   @impl true
+  @spec render(any()) :: Phoenix.LiveView.Rendered.t()
   def render(assigns) do
     ~H"""
     <div class="bg-gray-50 min-h-screen">

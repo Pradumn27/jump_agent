@@ -1,11 +1,15 @@
 defmodule JumpAgent.Automations.Triggers.HubspotTrigger do
-  def handle(%{instruction: instruction_text} = instruction) do
-    case Regex.run(~r/create a new note with the following content: (.*)/, instruction_text) do
-      [_, content] ->
-        {:ok, content}
+  alias JumpAgent.Automations.WatchInstruction
 
-      _ ->
-        {:error, "Failed to parse instruction"}
+  def handle(%WatchInstruction{} = watch_instruction) do
+    user = watch_instruction.user
+    prompt = watch_instruction.instruction
+
+    # TODO: Conditionally Trigger based on whether new info is there or not - also sync
+
+    case JumpAgent.OpenAI.chat_completion_for_triggers(prompt, user) do
+      {:ok, _} -> :ok
+      {:error, reason} -> {:error, reason}
     end
   end
 end

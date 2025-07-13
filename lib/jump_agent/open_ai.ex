@@ -11,9 +11,7 @@ defmodule JumpAgent.OpenAI do
     embedding = Embedding.generate(user_prompt)
 
     contexts =
-      Knowledge.search_similar_contexts(embedding, 100)
-
-    # |> filter_by_user(user.id)
+      Knowledge.search_similar_contexts(embedding, user.id, 100)
 
     chat_history =
       JumpAgent.Chat.get_chat_session_with_messages!(chat_session_id)
@@ -55,6 +53,99 @@ defmodule JumpAgent.OpenAI do
 
     User Question: #{user_prompt}
     """
+
+    headers = [
+      {"Content-Type", "application/json"},
+      {"Authorization", "Bearer #{api_key}"}
+    ]
+
+    messages = [
+      %{role: "system", content: final_prompt}
+    ]
+
+    body =
+      Jason.encode!(%{
+        model: "gpt-4o",
+        messages: messages,
+        tools: tools,
+        tool_choice: "auto"
+      })
+
+    case HTTPoison.post("https://api.openai.com/v1/chat/completions", body, headers,
+           # Wait up to 30 seconds for a response
+           recv_timeout: 30_000,
+           # Wait up to 10 seconds for connect
+           timeout: 10_000
+         ) do
+      {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
+        {:ok, response} = Jason.decode(body)
+
+        case get_in(response, ["choices", Access.at(0), "message", "tool_calls"]) do
+          nil ->
+            reply = get_in(response, ["choices", Access.at(0), "message", "content"])
+            {:ok, reply}
+
+          tool_calls ->
+            Enum.each(tool_calls, fn %{
+                                       "function" => %{
+                                         "name" => tool_name,
+                                         "arguments" => args_json
+                                       },
+                                       "id" => tool_call_id
+                                     } ->
+              {:ok, args} = Jason.decode(args_json)
+              result = AgentTools.Dispatcher.dispatch_tool(tool_name, user, args)
+              send_tool_response_to_openai(messages, tool_call_id, tool_name, result)
+            end)
+
+            {:ok, "Tool call in progress"}
+        end
+
+      {:ok, %HTTPoison.Response{status_code: status, body: body}} ->
+        Logger.error("❌ OpenAI returned #{status}: #{inspect(body)}")
+        {:error, body}
+
+      {:error, reason} ->
+        Logger.error("❌ HTTP request failed: #{inspect(reason)}")
+        {:error, reason}
+    end
+  end
+
+  def chat_completion_for_triggers(user_prompt, user) do
+    api_key = Application.get_env(:jump_agent, :openai)[:api_key]
+
+    embedding = Embedding.generate(user_prompt)
+
+    contexts =
+      Knowledge.search_similar_contexts(embedding, user.id, 100)
+
+    context_text =
+      contexts
+      |> Enum.map(& &1.content)
+      |> Enum.join("\n\n")
+
+    final_prompt = """
+    You are a helpful assistant.
+    When presenting email messages, format them using **Markdown triple backtick code blocks** (```).
+    Only use **plain text** formatting inside the code block — no bold/italic or Markdown inside.
+
+    Always prefer full email bodies over snippets. Use your best judgment to summarize **only if full content is unavailable**.
+
+    Use the following context if relevant:
+
+    Relevant knowledge context:
+    #{context_text}
+
+    <------------------------>
+
+    User has the email #{user.email}
+
+    <------------------------>
+
+    User Question: #{user_prompt}
+    """
+
+    tools = AgentTools.get_tools()
 
     headers = [
       {"Content-Type", "application/json"},
