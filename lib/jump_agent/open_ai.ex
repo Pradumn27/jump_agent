@@ -3,7 +3,7 @@ defmodule JumpAgent.OpenAI do
   require Logger
   alias JumpAgent.Embedding
   alias JumpAgent.Knowledge
-  alias JumpAgent.Tools
+  alias JumpAgent.AgentTools
 
   def chat_completion(user_prompt, user, chat_session_id) do
     api_key = Application.get_env(:jump_agent, :openai)[:api_key]
@@ -28,7 +28,7 @@ defmodule JumpAgent.OpenAI do
       |> Enum.map(& &1.content)
       |> Enum.join("\n\n")
 
-    tools = Tools.get_tools()
+    tools = AgentTools.get_tools()
 
     final_prompt = """
     You are a helpful assistant.
@@ -96,7 +96,7 @@ defmodule JumpAgent.OpenAI do
                                        "id" => tool_call_id
                                      } ->
               {:ok, args} = Jason.decode(args_json)
-              result = Tools.dispatch_tool(tool_name, user, args)
+              result = AgentTools.Dispatcher.dispatch_tool(tool_name, user, args)
               send_tool_response_to_openai(messages, tool_call_id, tool_name, result)
             end)
 
