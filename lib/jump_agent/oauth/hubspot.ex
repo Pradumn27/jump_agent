@@ -2,14 +2,11 @@ defmodule JumpAgent.OAuth.Hubspot do
   require Logger
 
   def refresh_token(refresh_token) do
-    client_id = "c5520986-8dca-4fe4-8998-aa9fbd39467c"
-    client_secret = "fbfd499b-aec0-4e4a-ab72-2fb417866427"
-
     body =
       URI.encode_query(%{
         grant_type: "refresh_token",
-        client_id: client_id,
-        client_secret: client_secret,
+        client_id: Application.fetch_env!(:jump_agent, :hubspot)[:client_id],
+        client_secret: Application.fetch_env!(:jump_agent, :hubspot)[:client_secret],
         refresh_token: refresh_token
       })
 

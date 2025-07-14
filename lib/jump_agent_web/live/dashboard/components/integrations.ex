@@ -23,35 +23,27 @@ defmodule JumpAgentWeb.Dashboard.Components.Integrations do
       </div>
       <div class="p-6 pt-0 space-y-4">
         <%= for integration <- @integrations do %>
-          <div class={
-            "p-4 rounded-lg border-2 transition-all " <>
-            case integration["sync_status"] do
-              "syncing" -> "border-yellow-300 bg-yellow-50"
-              "stale_sync" -> "border-yellow-400 bg-yellow-100"
-              "completed" -> "border-green-200 bg-green-50"
-              "error" -> "border-red-200 bg-red-50"
-              _ -> "border-gray-200 bg-gray-50"
-            end
-          }>
+          <div class={"p-4 rounded-lg border-2 transition-all #{integration_class(integration)}"}>
             <div class="flex items-center justify-between">
               <div class="flex items-center space-x-3">
-                <%= case integration["sync_status"] do %>
-                  <% "syncing" -> %>
-                    <.icon name="hero-arrow-path" class="h-5 w-5 animate-spin text-yellow-500" />
-                  <% "stale_sync" -> %>
-                    <span class="text-yellow-700">Still syncing? Try again from more options.</span>
-                  <% "completed" -> %>
-                    <.icon name="hero-check-circle" class="h-5 w-5 text-green-600" />
-                  <% "error" -> %>
-                    <.icon name="hero-x-circle" class="h-5 w-5 text-red-600" />
-                  <% _ -> %>
-                    <div class="h-5 w-5 rounded-full border-2 border-gray-300" />
+                <%= if integration["status"] == "disconnected" do %>
+                  <%= case integration["sync_status"] do %>
+                    <% "syncing" -> %>
+                      <.icon name="hero-arrow-path" class="h-5 w-5 animate-spin text-yellow-500" />
+                    <% "stale_sync" -> %>
+                      <span class="text-yellow-700">Still syncing? Try again from more options.</span>
+                    <% "completed" -> %>
+                      <.icon name="hero-check-circle" class="h-5 w-5 text-green-600" />
+                    <% "error" -> %>
+                      <.icon name="hero-x-circle" class="h-5 w-5 text-red-600" />
+                    <% _ -> %>
+                      <div class="h-5 w-5 rounded-full border-2 border-gray-300" />
+                  <% end %>
                 <% end %>
-
                 <div>
                   <p class="font-medium text-gray-900">{integration["name"]}</p>
                   <p class="text-sm text-gray-600">{integration["description"]}</p>
-                  <%= if integration["sync_status"] do %>
+                  <%= if integration["status"] !== "disconnected" && integration["sync_status"] do %>
                     <p class="text-xs mt-1">
                       <%= case integration["sync_status"] do %>
                         <% "syncing" -> %>
@@ -114,5 +106,17 @@ defmodule JumpAgentWeb.Dashboard.Components.Integrations do
       </div>
     </div>
     """
+  end
+
+  defp integration_class(%{"status" => "disconnected"}), do: "border-gray-200 bg-white"
+
+  defp integration_class(%{"sync_status" => status}) do
+    case status do
+      "syncing" -> "border-yellow-300 bg-yellow-50"
+      "stale_sync" -> "border-yellow-400 bg-yellow-100"
+      "completed" -> "border-green-200 bg-green-50"
+      "error" -> "border-red-200 bg-red-50"
+      _ -> "border-gray-200 bg-gray-50"
+    end
   end
 end

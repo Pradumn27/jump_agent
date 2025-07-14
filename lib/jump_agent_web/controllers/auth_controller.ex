@@ -114,6 +114,8 @@ defmodule JumpAgentWeb.AuthController do
             user_id: current_user.email
           })
 
+          JumpAgent.Integrations.Status.update_or_create_status(current_user, "HubSpot", "idle")
+
           conn
           |> put_flash(:info, "Connected to HubSpot!")
           |> redirect(to: "/")

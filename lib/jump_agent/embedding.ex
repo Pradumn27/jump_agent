@@ -8,9 +8,10 @@ defmodule JumpAgent.Embedding do
   @model "text-embedding-ada-002"
 
   def generate(text) when is_binary(text) do
+    open_ai_key = Application.get_env(:jump_agent, :openai)[:api_key]
+
     headers = [
-      {"Authorization",
-       "Bearer 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"},
+      {"Authorization", "Bearer #{open_ai_key}"},
       {"Content-Type", "application/json"}
     ]
 

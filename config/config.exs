@@ -86,7 +86,7 @@ config :jump_agent, :hubspot,
 
 config :jump_agent, :openai,
   api_key:
-    "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"
+    "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"
 
 config :jump_agent, JumpAgent.Repo, types: JumpAgent.PostgrexTypes
 
