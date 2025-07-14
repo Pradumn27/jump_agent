@@ -75,7 +75,7 @@ if config_env() == :prod do
     client_secret: System.get_env("HUBSPOT_CLIENT_SECRET"),
     redirect_uri: System.get_env("HUBSPOT_REDIRECT_URI")
 
-  config :jump_agent, :openai, api_key: System.get_env("OPENAI_API_KEY")
+  config :jump_agent, :openai, api_key: System.get_env("OPEN_AI_API_KEY")
   config :jump_agent, JumpAgent.Repo, types: JumpAgent.PostgrexTypes
 
   # ## SSL Support

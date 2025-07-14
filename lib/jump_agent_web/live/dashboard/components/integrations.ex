@@ -26,7 +26,7 @@ defmodule JumpAgentWeb.Dashboard.Components.Integrations do
           <div class={"p-4 rounded-lg border-2 transition-all #{integration_class(integration)}"}>
             <div class="flex items-center justify-between">
               <div class="flex items-center space-x-3">
-                <%= if integration["status"] == "disconnected" do %>
+                <%= if integration["status"] !== "disconnected" do %>
                   <%= case integration["sync_status"] do %>
                     <% "syncing" -> %>
                       <.icon name="hero-arrow-path" class="h-5 w-5 animate-spin text-yellow-500" />
