@@ -1,6 +1,5 @@
 defmodule JumpAgent.Integrations.Gmail do
   alias JumpAgent.Accounts
-  alias JumpAgent.Knowledge
   alias GoogleApi.Gmail.V1.Api.Users
   alias GoogleApi.Gmail.V1.Connection
   require Logger
@@ -25,46 +24,51 @@ defmodule JumpAgent.Integrations.Gmail do
   end
 
   defp parse_and_store(user, message) do
-    headers = message.payload.headers
+    message_id = message.id
 
-    subject = get_header(headers, "Subject")
-    from = get_header(headers, "From")
-    to = get_header(headers, "To")
-    internal_date = message.internalDate
-    snippet = message.snippet || ""
+    # ✅ Skip if already ingested
+    if JumpAgent.Knowledge.get_context_by_source_id("gmail", message_id, user.id) do
+      :already_stored
+    else
+      headers = message.payload.headers
+      subject = get_header(headers, "Subject")
+      from = get_header(headers, "From")
+      to = get_header(headers, "To")
+      internal_date = message.internalDate
+      snippet = message.snippet || ""
+      body = extract_body(message.payload)
+      normalized_from_name = normalize_name(from)
 
-    body = extract_body(message.payload)
-    normalized_from_name = normalize_name(from)
+      content = """
+      Email from: #{from}
+      Email to: #{to}
+      Subject: #{subject}
+      Message ID: #{message.id}
+      Date: #{format_internal_date(internal_date)}
 
-    content = """
-    Email from: #{from}
-    Email to: #{to}
-    Subject: #{subject}
-    Message ID: #{message.id}
-    Date: #{format_internal_date(internal_date)}
+      Body:
+      #{body}
 
-    Body:
-    #{body}
+      Snippet:
+      #{snippet}
+      """
 
-    Snippet:
-    #{snippet}
-    """
-
-    Knowledge.create_context(%{
-      source: "gmail",
-      source_id: message.id,
-      content: content,
-      metadata: %{
-        from: from,
-        to: to,
-        subject: subject,
-        thread_id: message.threadId,
-        internal_date: internal_date,
-        normalized_from_name: normalized_from_name,
-        message_id: message.id
-      },
-      user_id: user.id
-    })
+      JumpAgent.Knowledge.create_context(%{
+        source: "gmail",
+        source_id: message_id,
+        content: content,
+        metadata: %{
+          from: from,
+          to: to,
+          subject: subject,
+          thread_id: message.threadId,
+          internal_date: internal_date,
+          normalized_from_name: normalized_from_name,
+          message_id: message_id
+        },
+        user_id: user.id
+      })
+    end
   end
 
   defp get_header(headers, key) do

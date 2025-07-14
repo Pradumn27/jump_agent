@@ -135,4 +135,12 @@ defmodule JumpAgent.Knowledge do
     )
     |> Repo.all()
   end
+
+  def get_context_by_source_id(source, source_id, user_id) do
+    Repo.get_by(JumpAgent.Knowledge.Context,
+      source: source,
+      source_id: source_id,
+      user_id: user_id
+    )
+  end
 end

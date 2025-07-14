@@ -415,7 +415,7 @@ defmodule JumpAgentWeb.DashboardLive do
 
     socket
     |> assign(:show_load_context_modal, false)
-    |> assign(socket, integrations: updated_integrations)
+    |> assign(integrations: updated_integrations)
     |> assign(syncing_started_at: DateTime.utc_now())
     |> assign(sync_check_timer: Process.send_after(self(), :check_sync_timeout, 60_000))
 
