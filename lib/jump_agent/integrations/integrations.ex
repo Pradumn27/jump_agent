@@ -33,29 +33,40 @@ defmodule JumpAgent.Integrations do
   end
 
   def sync_integrations(user) do
-    # Gmail
-    try do
-      JumpAgent.Integrations.Gmail.fetch_recent_emails(user, 10)
-    rescue
-      e -> Logger.error("Failed to sync Gmail: #{inspect(e)}")
-    end
+    tasks = [
+      fn ->
+        safe_sync(fn -> JumpAgent.Integrations.Gmail.fetch_recent_emails(user, 10) end, "Gmail")
+      end,
+      fn ->
+        safe_sync(
+          fn -> JumpAgent.Integrations.Calendar.sync_upcoming_events(user, 50) end,
+          "Calendar"
+        )
+      end,
+      fn -> maybe_sync_hubspot(user) end
+    ]
 
-    # Google Calendar
-    try do
-      JumpAgent.Integrations.Calendar.sync_upcoming_events(user, 50)
-    rescue
-      e -> Logger.error("Failed to sync Calendar: #{inspect(e)}")
-    end
+    Task.async_stream(tasks, & &1.(), max_concurrency: 3, timeout: 30_000)
+    |> Stream.run()
+  end
 
-    # HubSpot (conditionally)
-    case Accounts.get_auth_identity(user, "hubspot") do
+  defp safe_sync(task_fn, label) do
+    try do
+      task_fn.()
+    rescue
+      e -> Logger.error("Failed to sync #{label}: #{inspect(e)}")
+    end
+  end
+
+  defp maybe_sync_hubspot(user) do
+    case JumpAgent.Accounts.get_auth_identity(user, "hubspot") do
       %{token: _token} ->
-        try do
-          JumpAgent.Integrations.Hubspot.sync_contacts(user, 50)
-          JumpAgent.Integrations.Hubspot.sync_notes(user, 50)
-        rescue
-          e -> Logger.error("Failed to sync HubSpot: #{inspect(e)}")
-        end
+        safe_sync(
+          fn -> JumpAgent.Integrations.Hubspot.sync_contacts(user, 50) end,
+          "HubSpot Contacts"
+        )
+
+        safe_sync(fn -> JumpAgent.Integrations.Hubspot.sync_notes(user, 50) end, "HubSpot Notes")
 
       _ ->
         Logger.debug("HubSpot not connected for user #{user.id}")

@@ -157,7 +157,6 @@ defmodule JumpAgent.Integrations.Calendar do
              event_id,
              body: updated_event
            ) do
-      # ✅ Start calendar sync in background
       Task.start(fn ->
         try do
           sync_upcoming_events(user, 10)

@@ -172,45 +172,67 @@ defmodule JumpAgentWeb.DashboardLive do
   end
 
   @impl true
-  def handle_event("sync_integration", %{"name" => "Google Calendar"}, socket) do
+  def handle_event("sync_integration", %{"name" => "Calendar"}, socket) do
     user = socket.assigns.current_user
 
-    case JumpAgent.Integrations.Calendar.sync_upcoming_events(user) do
-      {:ok, _} ->
-        {:noreply, put_flash(socket, :info, "Calendar synced successfully.")}
+    Task.start(fn ->
+      try do
+        case JumpAgent.Integrations.Calendar.sync_upcoming_events(user) do
+          {:ok, _} ->
+            Logger.info("Google Calendar synced successfully for user #{user.id}")
 
-      {:error, err} ->
-        Logger.error("Calendar sync failed: #{inspect(err)}")
-        {:noreply, put_flash(socket, :error, "Failed to sync Calendar.")}
-    end
+          {:error, err} ->
+            Logger.error("Google Calendar sync failed for user #{user.id}: #{inspect(err)}")
+        end
+      rescue
+        e -> Logger.error("Exception syncing Google Calendar for user #{user.id}: #{inspect(e)}")
+      end
+    end)
+
+    {:noreply, put_flash(socket, :info, "Google Calendar sync started in background.")}
   end
 
   @impl true
   def handle_event("sync_integration", %{"name" => "Gmail"}, socket) do
     user = socket.assigns.current_user
 
-    case JumpAgent.Integrations.Gmail.fetch_recent_emails(user) do
-      {:error, err} ->
-        Logger.error("Gmail sync failed: #{inspect(err)}")
-        {:noreply, put_flash(socket, :error, "Failed to sync Gmail.")}
+    Task.start(fn ->
+      try do
+        case JumpAgent.Integrations.Gmail.fetch_recent_emails(user) do
+          {:error, err} ->
+            Logger.error("Gmail sync failed for user #{user.id}: #{inspect(err)}")
 
-      _ ->
-        {:noreply, put_flash(socket, :info, "Gmail synced successfully.")}
-    end
+          _ ->
+            Logger.info("Gmail synced successfully for user #{user.id}")
+        end
+      rescue
+        e -> Logger.error("Exception during Gmail sync for user #{user.id}: #{inspect(e)}")
+      end
+    end)
+
+    {:noreply, put_flash(socket, :info, "Gmail sync started in background.")}
   end
 
   @impl true
   def handle_event("sync_integration", %{"name" => "HubSpot"}, socket) do
     user = socket.assigns.current_user
 
-    case JumpAgent.Integrations.Hubspot.sync_contacts(user) do
-      {:ok, _} ->
-        JumpAgent.Integrations.Hubspot.sync_notes(user)
-        {:noreply, put_flash(socket, :info, "HubSpot synced successfully.")}
+    Task.start(fn ->
+      try do
+        case JumpAgent.Integrations.Hubspot.sync_contacts(user) do
+          {:ok, _} ->
+            JumpAgent.Integrations.Hubspot.sync_notes(user)
+            Logger.info("HubSpot synced successfully for user #{user.id}")
 
-      {:error, err} ->
-        {:noreply, put_flash(socket, :error, "Failed to sync HubSpot: #{inspect(err)}")}
-    end
+          {:error, err} ->
+            Logger.error("HubSpot sync failed for user #{user.id}: #{inspect(err)}")
+        end
+      rescue
+        e -> Logger.error("Exception syncing HubSpot for user #{user.id}: #{inspect(e)}")
+      end
+    end)
+
+    {:noreply, put_flash(socket, :info, "HubSpot sync started in background.")}
   end
 
   def handle_event("disconnect_integration", %{"name" => "HubSpot"}, socket) do

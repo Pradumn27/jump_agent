@@ -3,24 +3,27 @@ defmodule JumpAgent.Automations.TriggerHandlers do
   alias JumpAgent.Automations.Triggers.{GmailTrigger, CalendarTrigger, HubspotTrigger}
   alias JumpAgent.WatchInstructions
 
+  @supervisor JumpAgent.TaskSupervisor
+
   def process_trigger(watch_instruction) do
-    case handle(watch_instruction.trigger, watch_instruction) do
-      :ok ->
-        Logger.info("✅ Executed WatchInstruction: #{watch_instruction.instruction}")
+    Task.Supervisor.start_child(@supervisor, fn ->
+      case handle(watch_instruction.trigger, watch_instruction) do
+        :ok ->
+          Logger.info("✅ Executed WatchInstruction: #{watch_instruction.instruction}")
 
-        # Mark as executed
-        now = DateTime.utc_now()
+          # Mark as executed
+          now = DateTime.utc_now()
 
-        WatchInstructions.update_watch_instruction(watch_instruction, %{
-          last_executed_at: now
-        })
+          WatchInstructions.update_watch_instruction(watch_instruction, %{
+            last_executed_at: now
+          })
 
-        :ok
+        {:error, reason} ->
+          Logger.error("❌ Failed to execute WatchInstruction: #{inspect(reason)}")
+      end
+    end)
 
-      {:error, reason} ->
-        Logger.error("❌ Failed to execute WatchInstruction: #{inspect(reason)}")
-        {:error, reason}
-    end
+    :ok
   end
 
   def handle("gmail", watch_instruction), do: GmailTrigger.handle(watch_instruction)

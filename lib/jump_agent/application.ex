@@ -18,7 +18,8 @@ defmodule JumpAgent.Application do
       # {JumpAgent.Worker, arg},
       # Start to serve requests, typically the last entry
       JumpAgentWeb.Endpoint,
-      {Oban, Application.fetch_env!(:jump_agent, Oban)}
+      {Oban, Application.fetch_env!(:jump_agent, Oban)},
+      {Task.Supervisor, name: JumpAgent.TaskSupervisor}
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html

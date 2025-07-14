@@ -8,8 +8,6 @@ defmodule JumpAgent.Automations.Triggers.CalendarTrigger do
 
     JumpAgent.Integrations.Calendar.sync_upcoming_events(user, 5)
 
-    # TODO: Conditionally Trigger based on whether new info is there or not
-
     case JumpAgent.OpenAI.chat_completion_for_triggers(prompt, user, last_executed_at) do
       {:ok, _} -> :ok
       {:error, reason} -> {:error, reason}

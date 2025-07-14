@@ -110,7 +110,7 @@ defmodule JumpAgentWeb.Dashboard.Components.Chatbot do
 
   def agent_message(assigns) do
     ~H"""
-    <div class="w-full max-w-[80%] p-4 rounded-lg prose prose-invert overflow-x-auto">
+    <div class="w-full max-w-full p-4 rounded-lg prose prose-invert overflow-x-auto">
       {raw(Earmark.as_html!(@content))}
     </div>
     """

@@ -11,7 +11,7 @@ defmodule JumpAgent.OpenAI do
     embedding = Embedding.generate(user_prompt)
 
     contexts =
-      Knowledge.search_similar_contexts(embedding, user.id, 100)
+      Knowledge.search_similar_contexts(embedding, user.id, 50)
 
     chat_history =
       JumpAgent.Chat.get_chat_session_with_messages!(chat_session_id)

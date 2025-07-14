@@ -15,8 +15,6 @@ defmodule JumpAgent.Automations.Triggers.HubspotTrigger do
         Logger.error("HubSpot sync failed: #{inspect(err)}")
     end
 
-    # TODO: Conditionally Trigger based on whether new info is there or not
-
     case JumpAgent.OpenAI.chat_completion_for_triggers(prompt, user, last_executed_at) do
       {:ok, _} -> :ok
       {:error, reason} -> {:error, reason}

@@ -8,8 +8,6 @@ defmodule JumpAgent.Automations.Triggers.GmailTrigger do
 
     JumpAgent.Integrations.Gmail.fetch_recent_emails(user, 5)
 
-    # TODO: Conditionally Trigger based on whether new info is there or not
-
     case JumpAgent.OpenAI.chat_completion_for_triggers(prompt, user, last_executed_at) do
       {:ok, _} -> :ok
       {:error, reason} -> {:error, reason}
