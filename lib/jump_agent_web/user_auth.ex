@@ -36,7 +36,7 @@ defmodule JumpAgentWeb.UserAuth do
       |> put_token_in_session(token)
       |> maybe_write_remember_me_cookie(token, params)
 
-    Task.Supervisor.start_child(JumpAgent.SyncSupervisor, fn ->
+    Task.start(fn ->
       try do
         JumpAgent.Integrations.sync_integrations(user)
       rescue
