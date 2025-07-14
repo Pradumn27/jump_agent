@@ -75,19 +75,16 @@ config :ueberauth, Ueberauth,
   ]
 
 config :ueberauth, Ueberauth.Strategy.Google.OAuth,
-  client_id: "530016174947-s1n491d8ab8e5dsifhkgiqdj90njo1dk.apps.googleusercontent.com",
-  client_secret: "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",
-  redirect_uri: "http://localhost:4000/auth/google/callback"
+  client_id: System.get_env("GOOGLE_CLIENT_ID"),
+  client_secret: System.get_env("GOOGLE_CLIENT_SECRET"),
+  redirect_uri: System.get_env("GOOGLE_REDIRECT_URI")
 
 config :jump_agent, :hubspot,
-  client_id: "c5520986-8dca-4fe4-8998-aa9fbd39467c",
-  client_secret: "fbfd499b-aec0-4e4a-ab72-2fb417866427",
-  redirect_uri: "http://localhost:4000/auth/hubspot/callback"
+  client_id: System.get_env("HUBSPOT_CLIENT_ID"),
+  client_secret: System.get_env("HUBSPOT_CLIENT_SECRET"),
+  redirect_uri: System.get_env("HUBSPOT_REDIRECT_URI")
 
-config :jump_agent, :openai,
-  api_key:
-    "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"
-
+config :jump_agent, :openai, api_key: System.get_env("OPENAI_API_KEY")
 config :jump_agent, JumpAgent.Repo, types: JumpAgent.PostgrexTypes
 
 config :jump_agent, Oban,
