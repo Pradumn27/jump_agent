@@ -11,7 +11,6 @@ defmodule JumpAgent.Automations.TriggerHandlers do
         :ok ->
           Logger.info("✅ Executed WatchInstruction: #{watch_instruction.instruction}")
 
-          # Mark as executed
           now = DateTime.utc_now()
 
           WatchInstructions.update_watch_instruction(watch_instruction, %{
