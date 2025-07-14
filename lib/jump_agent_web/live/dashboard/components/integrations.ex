@@ -63,11 +63,13 @@ defmodule JumpAgentWeb.Dashboard.Components.Integrations do
                         Sync
                       </button>
                       <%= if integration["name"] == "HubSpot" do %>
-                        <.link href="/logout">
-                          <button class="px-4 py-2 text-sm text-left text-red-600 hover:bg-gray-100">
-                            Disconnect
-                          </button>
-                        </.link>
+                        <button
+                          phx-click="disconnect_integration"
+                          phx-value-name={integration["name"]}
+                          class="px-4 py-2 text-sm text-left text-red-600 hover:bg-gray-100"
+                        >
+                          Disconnect
+                        </button>
                       <% end %>
                     </div>
                   </div>
