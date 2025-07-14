@@ -18,7 +18,7 @@ defmodule JumpAgent.Integrations do
         "canDisconnect" => false
       },
       %{
-        "name" => "Google Calendar",
+        "name" => "Calendar",
         "description" => "Sync your calendar events with Google Calendar",
         "status" => "connected",
         "canDisconnect" => false

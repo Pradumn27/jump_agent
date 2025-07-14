@@ -19,5 +19,6 @@ defmodule JumpAgent.Knowledge.Context do
     context
     |> cast(attrs, [:source, :source_id, :content, :metadata, :embedding, :user_id])
     |> validate_required([:source, :source_id, :content, :user_id])
+    |> unique_constraint([:user_id, :source, :source_id])
   end
 end

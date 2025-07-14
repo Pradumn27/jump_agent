@@ -65,9 +65,34 @@ defmodule JumpAgentWeb.Dashboard.Components.Chatbot do
   def empty_message_state(assigns) do
     ~H"""
     <%= if @messages == [] do %>
-      <div class="w-full h-full flex flex-col text-xl font-semibold justify-center items-center">
-        <div>Hi, I am your AI Helper</div>
-        <div>Ask anything that comes to your mind</div>
+      <div class="w-full h-full flex flex-col items-center justify-center text-center text-gray-700 px-4 py-12 space-y-4">
+        <div class="bg-green-100 text-green-700 rounded-full p-3">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            class="h-8 w-8"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M8 10h.01M12 14h.01M16 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+            />
+          </svg>
+        </div>
+        <div>
+          <h2 class="text-2xl font-semibold">Hello, I'm your AI Assistant</h2>
+          <p class="mt-1 text-gray-500 text-base">
+            I can help you draft emails, find client insights, summarize notes, and more.
+          </p>
+          <p class="text-gray-400 text-sm mt-2">Try asking something like:</p>
+          <div class="text-sm text-gray-600 italic mt-1">
+            “Summarize my latest client meeting”<br /> “Draft a follow-up email for Rajiv”<br />
+            “What are my tasks for today?”
+          </div>
+        </div>
       </div>
     <% end %>
     """

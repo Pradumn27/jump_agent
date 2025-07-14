@@ -11,7 +11,6 @@ defmodule JumpAgent.Workers.SyncIntegrationsWorker do
   def perform(_job) do
     logged_in_users = Accounts.get_users_with_valid_sessions()
     Logger.info("[SyncWorker] Running sync evaluation")
-    IO.inspect(logged_in_users)
 
     Enum.each(logged_in_users, fn user ->
       Task.start(fn ->
