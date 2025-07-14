@@ -65,6 +65,19 @@ if config_env() == :prod do
     ],
     secret_key_base: secret_key_base
 
+  config :ueberauth, Ueberauth.Strategy.Google.OAuth,
+    client_id: System.get_env("GOOGLE_CLIENT_ID"),
+    client_secret: System.get_env("GOOGLE_CLIENT_SECRET"),
+    redirect_uri: System.get_env("GOOGLE_REDIRECT_URI")
+
+  config :jump_agent, :hubspot,
+    client_id: System.get_env("HUBSPOT_CLIENT_ID"),
+    client_secret: System.get_env("HUBSPOT_CLIENT_SECRET"),
+    redirect_uri: System.get_env("HUBSPOT_REDIRECT_URI")
+
+  config :jump_agent, :openai, api_key: System.get_env("OPENAI_API_KEY")
+  config :jump_agent, JumpAgent.Repo, types: JumpAgent.PostgrexTypes
+
   # ## SSL Support
   #
   # To get SSL working, you will need to add the `https` key
