@@ -45,8 +45,6 @@ defmodule JumpAgentWeb.Dashboard.Components.Header do
     ~H"""
     <header class="bg-white border-b border-gray-200">
       <div class="flex flex-col gap-4 px-4 py-4 md:flex-row md:items-center md:justify-between">
-        
-    <!-- Top row (title + avatar) -->
         <div class="flex items-center justify-between">
           <div class="flex items-center gap-3">
             <div class="p-2 bg-green-100 rounded-lg">
@@ -59,14 +57,12 @@ defmodule JumpAgentWeb.Dashboard.Components.Header do
               </p>
             </div>
           </div>
-          
-    <!-- Avatar shown only on mobile -->
+
           <div class="block md:hidden">
             <.profile_menu current_user={@current_user} show_dropdown={@show_dropdown} />
           </div>
         </div>
-        
-    <!-- Bottom row (button + avatar on desktop) -->
+
         <div class="flex justify-between items-center md:justify-end gap-2 md:gap-4">
           <.button
             phx-click={show_modal("my-modal")}
@@ -74,8 +70,7 @@ defmodule JumpAgentWeb.Dashboard.Components.Header do
           >
             <.icon name="hero-envelope" class="mr-2 h-5 w-5" /> Ask AI Assistant
           </.button>
-          
-    <!-- Avatar on desktop -->
+
           <div class="hidden md:block">
             <.profile_menu current_user={@current_user} show_dropdown={@show_dropdown} />
           </div>

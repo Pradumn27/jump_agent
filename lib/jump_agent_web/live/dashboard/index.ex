@@ -2,11 +2,17 @@ defmodule JumpAgentWeb.DashboardLive do
   use JumpAgentWeb, :live_view
 
   require Logger
-  import JumpAgentWeb.Dashboard.Components.{Chatbot, Header, Integrations, OngoingInstructions}
+
+  import JumpAgentWeb.Dashboard.Components.{
+    Chatbot,
+    Header,
+    Integrations,
+    OngoingInstructions
+  }
 
   @impl true
   def mount(_params, _session, socket) do
-    chat_sessions = JumpAgent.Chat.list_chat_sessions()
+    chat_sessions = JumpAgent.Chat.list_chat_sessions(socket.assigns.current_user.id)
 
     integrations = JumpAgent.Integrations.get_integrations(socket.assigns.current_user)
 
@@ -125,7 +131,7 @@ defmodule JumpAgentWeb.DashboardLive do
 
   @impl true
   def handle_event("change_tab", %{"tab" => "history"}, socket) do
-    chat_sessions = JumpAgent.Chat.list_chat_sessions()
+    chat_sessions = JumpAgent.Chat.list_chat_sessions(socket.assigns.current_user.id)
     {:noreply, assign(socket, current_tab: "history", chat_sessions: chat_sessions)}
   end
 
@@ -261,7 +267,12 @@ defmodule JumpAgentWeb.DashboardLive do
         socket
       end
 
-    {:noreply, assign(socket, :chat_sessions, JumpAgent.Chat.list_chat_sessions())}
+    {:noreply,
+     assign(
+       socket,
+       :chat_sessions,
+       JumpAgent.Chat.list_chat_sessions(socket.assigns.current_user.id)
+     )}
   end
 
   @impl true
@@ -325,7 +336,11 @@ defmodule JumpAgentWeb.DashboardLive do
       <div class="p-6 space-y-6">
         <div class="max-w-7xl mx-auto">
           <div class="space-y-6">
-            <.integrations id="integrations" integrations={@integrations} />
+            <.integrations
+              id="integrations"
+              integrations={@integrations}
+              current_user={@current_user}
+            />
             <.ongoing_instructions
               id="ongoing-instructions"
               ongoing_instructions={@ongoing_instructions}

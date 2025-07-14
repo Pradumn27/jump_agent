@@ -1,6 +1,7 @@
 defmodule JumpAgentWeb.Dashboard.Components.Integrations do
   use Phoenix.LiveComponent
   import JumpAgentWeb.CoreComponents
+  import JumpAgentWeb.Dashboard.Components.HubspotConnect
   alias Phoenix.LiveView.JS
 
   def integrations(assigns) do
@@ -35,11 +36,7 @@ defmodule JumpAgentWeb.Dashboard.Components.Integrations do
 
               <div class="relative" id={"wrapper-#{integration["name"]}"}>
                 <%= if integration["status"] == "disconnected" do %>
-                  <.link href="/auth/#{String.downcase(integration['name'])}">
-                    <button class="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded-md">
-                      Connect {integration["name"]}
-                    </button>
-                  </.link>
+                  <.hubspot_connect_button current_user={@current_user} />
                 <% else %>
                   <button
                     type="button"

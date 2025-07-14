@@ -17,8 +17,9 @@ defmodule JumpAgent.Chat do
       [%ChatSession{}, ...]
 
   """
-  def list_chat_sessions do
+  def list_chat_sessions(user_id) do
     ChatSession
+    |> where([c], c.user_id == ^user_id)
     |> order_by(desc: :last_active_at)
     |> Repo.all()
   end
