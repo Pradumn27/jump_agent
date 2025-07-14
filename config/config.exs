@@ -96,7 +96,6 @@ config :jump_agent, Oban,
     Oban.Plugins.Pruner,
     {Oban.Plugins.Cron,
      crontab: [
-       {"*/30 * * * *", JumpAgent.Workers.SyncIntegrationsWorker},
        {"* * * * *", JumpAgent.Automations.WatchEngine}
      ]}
   ],

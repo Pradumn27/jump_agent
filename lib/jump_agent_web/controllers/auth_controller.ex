@@ -114,15 +114,6 @@ defmodule JumpAgentWeb.AuthController do
             user_id: current_user.email
           })
 
-          Task.start(fn ->
-            try do
-              JumpAgent.Integrations.Hubspot.sync_contacts(current_user)
-              JumpAgent.Integrations.Hubspot.sync_notes(current_user)
-            rescue
-              e -> Logger.error("HubSpot sync failed: #{inspect(e)}")
-            end
-          end)
-
           conn
           |> put_flash(:info, "Connected to HubSpot!")
           |> redirect(to: "/")

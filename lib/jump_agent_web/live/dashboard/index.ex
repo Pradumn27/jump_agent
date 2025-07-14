@@ -7,13 +7,20 @@ defmodule JumpAgentWeb.DashboardLive do
     Chatbot,
     Header,
     Integrations,
-    OngoingInstructions
+    OngoingInstructions,
+    LoadContextModal
   }
 
   @impl true
   def mount(_params, _session, socket) do
-    chat_sessions = JumpAgent.Chat.list_chat_sessions(socket.assigns.current_user.id)
+    if connected?(socket) do
+      Phoenix.PubSub.subscribe(
+        JumpAgent.PubSub,
+        "integration_sync:#{socket.assigns.current_user.id}"
+      )
+    end
 
+    chat_sessions = JumpAgent.Chat.list_chat_sessions(socket.assigns.current_user.id)
     integrations = JumpAgent.Integrations.get_integrations(socket.assigns.current_user)
 
     ongoing_instructions =
@@ -29,7 +36,10 @@ defmodule JumpAgentWeb.DashboardLive do
      |> assign(:current_tab, "chat")
      |> assign(:show_dropdown, false)
      |> assign(:integrations, integrations)
-     |> assign(:ongoing_instructions, ongoing_instructions)}
+     |> assign(:ongoing_instructions, ongoing_instructions)
+     |> assign(:show_load_context_modal, true)
+     |> assign(:syncing_started_at, nil)
+     |> assign(:sync_check_timer, nil)}
   end
 
   @impl true
@@ -175,13 +185,40 @@ defmodule JumpAgentWeb.DashboardLive do
   def handle_event("sync_integration", %{"name" => "Calendar"}, socket) do
     user = socket.assigns.current_user
 
+    JumpAgent.Integrations.Status.update_or_create_status(user, "Calendar", "syncing")
+
+    updated_integrations =
+      JumpAgent.Integrations.get_integrations(socket.assigns.current_user)
+
+    socket = assign(socket, integrations: updated_integrations)
+
     Task.start(fn ->
       try do
         case JumpAgent.Integrations.Calendar.sync_upcoming_events(user) do
           {:ok, _} ->
+            JumpAgent.Integrations.Status.update_status(user, "Calendar", "completed",
+              last_synced_at: DateTime.utc_now()
+            )
+
+            Phoenix.PubSub.broadcast(
+              JumpAgent.PubSub,
+              "integration_sync:#{user.id}",
+              {:integration_status_updated}
+            )
+
             Logger.info("Google Calendar synced successfully for user #{user.id}")
 
           {:error, err} ->
+            JumpAgent.Integrations.Status.update_status(user, "Calendar", "error",
+              last_synced_at: DateTime.utc_now()
+            )
+
+            Phoenix.PubSub.broadcast(
+              JumpAgent.PubSub,
+              "integration_sync:#{user.id}",
+              {:integration_status_updated}
+            )
+
             Logger.error("Google Calendar sync failed for user #{user.id}: #{inspect(err)}")
         end
       rescue
@@ -196,13 +233,40 @@ defmodule JumpAgentWeb.DashboardLive do
   def handle_event("sync_integration", %{"name" => "Gmail"}, socket) do
     user = socket.assigns.current_user
 
+    JumpAgent.Integrations.Status.update_or_create_status(user, "Gmail", "syncing")
+
+    updated_integrations =
+      JumpAgent.Integrations.get_integrations(socket.assigns.current_user)
+
+    socket = assign(socket, integrations: updated_integrations)
+
     Task.start(fn ->
       try do
         case JumpAgent.Integrations.Gmail.fetch_recent_emails(user) do
           {:error, err} ->
+            JumpAgent.Integrations.Status.update_status(user, "Gmail", "error",
+              last_synced_at: DateTime.utc_now()
+            )
+
+            Phoenix.PubSub.broadcast(
+              JumpAgent.PubSub,
+              "integration_sync:#{user.id}",
+              {:integration_status_updated}
+            )
+
             Logger.error("Gmail sync failed for user #{user.id}: #{inspect(err)}")
 
           _ ->
+            JumpAgent.Integrations.Status.update_status(user, "Gmail", "completed",
+              last_synced_at: DateTime.utc_now()
+            )
+
+            Phoenix.PubSub.broadcast(
+              JumpAgent.PubSub,
+              "integration_sync:#{user.id}",
+              {:integration_status_updated}
+            )
+
             Logger.info("Gmail synced successfully for user #{user.id}")
         end
       rescue
@@ -217,14 +281,41 @@ defmodule JumpAgentWeb.DashboardLive do
   def handle_event("sync_integration", %{"name" => "HubSpot"}, socket) do
     user = socket.assigns.current_user
 
+    JumpAgent.Integrations.Status.update_or_create_status(user, "HubSpot", "syncing")
+
+    updated_integrations =
+      JumpAgent.Integrations.get_integrations(socket.assigns.current_user)
+
+    socket = assign(socket, integrations: updated_integrations)
+
     Task.start(fn ->
       try do
         case JumpAgent.Integrations.Hubspot.sync_contacts(user) do
           {:ok, _} ->
+            JumpAgent.Integrations.Status.update_status(user, "HubSpot", "completed",
+              last_synced_at: DateTime.utc_now()
+            )
+
+            Phoenix.PubSub.broadcast(
+              JumpAgent.PubSub,
+              "integration_sync:#{user.id}",
+              {:integration_status_updated}
+            )
+
             JumpAgent.Integrations.Hubspot.sync_notes(user)
             Logger.info("HubSpot synced successfully for user #{user.id}")
 
           {:error, err} ->
+            JumpAgent.Integrations.Status.update_status(user, "HubSpot", "error",
+              last_synced_at: DateTime.utc_now()
+            )
+
+            Phoenix.PubSub.broadcast(
+              JumpAgent.PubSub,
+              "integration_sync:#{user.id}",
+              {:integration_status_updated}
+            )
+
             Logger.error("HubSpot sync failed for user #{user.id}: #{inspect(err)}")
         end
       rescue
@@ -295,6 +386,77 @@ defmodule JumpAgentWeb.DashboardLive do
        :chat_sessions,
        JumpAgent.Chat.list_chat_sessions(socket.assigns.current_user.id)
      )}
+  end
+
+  @impl true
+  def handle_event("close_load_context_modal", _params, socket) do
+    {:noreply, assign(socket, :show_load_context_modal, false)}
+  end
+
+  @impl true
+  def handle_event("confirm_load_context", _params, socket) do
+    user = socket.assigns.current_user
+
+    integrations = ["Gmail", "Calendar", "HubSpot"]
+
+    Enum.each(integrations, fn integration ->
+      JumpAgent.Integrations.Status.update_or_create_status(user, integration, "syncing")
+    end)
+
+    updated_integrations = JumpAgent.Integrations.get_integrations(socket.assigns.current_user)
+
+    Task.start(fn ->
+      try do
+        JumpAgent.Integrations.sync_integrations(user)
+      rescue
+        e -> Logger.error("Background context sync failed: #{inspect(e)}")
+      end
+    end)
+
+    socket
+    |> assign(:show_load_context_modal, false)
+    |> assign(socket, integrations: updated_integrations)
+    |> assign(syncing_started_at: DateTime.utc_now())
+    |> assign(sync_check_timer: Process.send_after(self(), :check_sync_timeout, 60_000))
+
+    {:noreply, put_flash(socket, :info, "Sync started in background.")}
+  end
+
+  @impl true
+  def handle_info(:check_sync_timeout, socket) do
+    integrations = JumpAgent.Integrations.get_integrations(socket.assigns.current_user)
+
+    updated_integrations =
+      Enum.map(integrations, fn integration ->
+        if integration["sync_status"] == "syncing" do
+          Map.put(integration, "sync_status", "stale_sync")
+        else
+          integration
+        end
+      end)
+
+    {:noreply, assign(socket, :integrations, updated_integrations)}
+  end
+
+  @impl true
+  def handle_info({:integration_status_updated}, socket) do
+    updated_integrations = JumpAgent.Integrations.get_integrations(socket.assigns.current_user)
+
+    all_done? =
+      Enum.all?(updated_integrations, fn i -> i["sync_status"] != "syncing" end)
+
+    socket =
+      if all_done? do
+        if is_reference(socket.assigns[:sync_check_timer]) do
+          Process.cancel_timer(socket.assigns.sync_check_timer)
+        end
+
+        assign(socket, :sync_check_timer, nil)
+      else
+        socket
+      end
+
+    {:noreply, assign(socket, :integrations, updated_integrations)}
   end
 
   @impl true
@@ -379,6 +541,7 @@ defmodule JumpAgentWeb.DashboardLive do
         chat_sessions={@chat_sessions}
         chat_session_id={@chat_session_id}
       />
+      <.load_context_modal show_load_context_modal={@show_load_context_modal} />
     </div>
     """
   end
