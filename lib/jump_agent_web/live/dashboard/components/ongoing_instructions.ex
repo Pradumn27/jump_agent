@@ -61,24 +61,45 @@ defmodule JumpAgentWeb.Dashboard.Components.OngoingInstructions do
             phx-click={show_modal("my-modal")}
             class="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded-md"
           >
-            Add Instruction
+            New Automation
           </button>
         </div>
       </div>
 
       <div class="p-6 pt-0">
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          <%= for instruction <- @ongoing_instructions do %>
-            <div class="p-4 rounded-lg border border-gray-200 bg-gray-50">
-              <div class="flex items-start justify-between mb-3">
-                <p class="text-sm text-gray-900 flex-1 pr-2">
-                  {instruction["instruction"]}
-                </p>
-                <.switch checked={instruction["active"]} id={instruction["id"]} />
+        <%= if @ongoing_instructions == [] do %>
+          <div class="flex flex-col items-center justify-center text-center text-gray-500 py-12">
+            <.icon name="hero-light-bulb" class="w-10 h-10 mb-4 text-yellow-400" />
+            <h2 class="text-lg font-semibold text-gray-700">No Automations Yet</h2>
+            <p class="mt-2 max-w-md text-sm">
+              Automations let the AI monitor your Gmail, Calendar, and HubSpot to act on your behalf — like replying to emails, scheduling meetings, or updating contacts.
+            </p>
+            <p class="mt-2 text-sm">
+              Click “+ New Automation” to create your first Watch Instruction.
+            </p>
+          </div>
+        <% else %>
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <%= for instruction <- @ongoing_instructions do %>
+              <div class="p-4 rounded-lg border border-gray-200 bg-gray-50">
+                <div class="flex items-start justify-between mb-3">
+                  <p class="text-sm text-gray-900 font-medium flex-1 pr-2">
+                    {instruction.instruction}
+                  </p>
+                  <.switch checked={instruction.is_active} id={instruction.id} />
+                </div>
+                <%= if instruction.last_executed_at do %>
+                  <p class="text-xs text-gray-500">
+                    Last executed at: {Calendar.strftime(
+                      instruction.last_executed_at,
+                      "%a, %b %d, %Y at %I:%M %p"
+                    )} UTC
+                  </p>
+                <% end %>
               </div>
-            </div>
-          <% end %>
-        </div>
+            <% end %>
+          </div>
+        <% end %>
       </div>
     </div>
     """

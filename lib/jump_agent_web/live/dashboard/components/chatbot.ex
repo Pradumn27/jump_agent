@@ -10,10 +10,12 @@ defmodule JumpAgentWeb.Dashboard.Components.Chatbot do
     ~H"""
     <div>
       <form phx-submit="send_message" class="relative w-full">
-        <input
+        <.input
           type="text"
           name="message"
           value={@current_message}
+          id="chat-input"
+          phx-mounted={JS.focus()}
           phx-change="update_message"
           placeholder="Write your message"
           class="w-full px-4 py-3 pr-12 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-gray-300 focus:border-gray-400 resize-none"
@@ -74,7 +76,7 @@ defmodule JumpAgentWeb.Dashboard.Components.Chatbot do
   def user_message(assigns) do
     ~H"""
     <div class="w-full flex justify-end">
-      <div class="p-4 bg-gray-100 rounded-lg">
+      <div class="max-w-[80%] p-4 bg-gray-100 rounded-lg">
         {@content}
       </div>
     </div>
@@ -83,7 +85,7 @@ defmodule JumpAgentWeb.Dashboard.Components.Chatbot do
 
   def agent_message(assigns) do
     ~H"""
-    <div class="w-full p-4 rounded-lg prose max-w-none prose-invert">
+    <div class="w-full max-w-[80%] p-4 rounded-lg prose prose-invert overflow-x-auto">
       {raw(Earmark.as_html!(@content))}
     </div>
     """

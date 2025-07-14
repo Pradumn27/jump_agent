@@ -2,6 +2,7 @@ defmodule JumpAgent.Automations.WatchInstruction do
   use Ecto.Schema
   import Ecto.Changeset
 
+  @derive {Jason.Encoder, only: [:id, :instruction, :is_active, :last_executed_at]}
   schema "watch_instructions" do
     field :trigger, :string
     field :instruction, :string

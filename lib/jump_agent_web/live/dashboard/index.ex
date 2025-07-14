@@ -10,18 +10,8 @@ defmodule JumpAgentWeb.DashboardLive do
 
     integrations = JumpAgent.Integrations.get_integrations(socket.assigns.current_user)
 
-    ongoing_instructions = [
-      %{
-        "id" => 1,
-        "instruction" => "Instruction 1",
-        "active" => true
-      },
-      %{
-        "id" => 2,
-        "instruction" => "Instruction 2",
-        "active" => false
-      }
-    ]
+    ongoing_instructions =
+      JumpAgent.WatchInstructions.list_watch_instructions(socket.assigns.current_user)
 
     {:ok,
      socket
@@ -243,16 +233,18 @@ defmodule JumpAgentWeb.DashboardLive do
   def handle_event("toggle_instruction", %{"id" => id}, socket) do
     id = String.to_integer(id)
 
-    updated_instructions =
-      Enum.map(socket.assigns.ongoing_instructions, fn instruction ->
-        if instruction["id"] == id do
-          Map.put(instruction, "active", !instruction["active"])
-        else
-          instruction
-        end
-      end)
+    watch_instruction = JumpAgent.WatchInstructions.get_watch_instruction!(id)
 
-    {:noreply, assign(socket, :ongoing_instructions, updated_instructions)}
+    JumpAgent.WatchInstructions.update_watch_instruction(watch_instruction, %{
+      is_active: !JumpAgent.WatchInstructions.get_watch_instruction!(id).is_active
+    })
+
+    {:noreply,
+     assign(
+       socket,
+       :ongoing_instructions,
+       JumpAgent.WatchInstructions.list_watch_instructions(socket.assigns.current_user)
+     )}
   end
 
   @impl true
